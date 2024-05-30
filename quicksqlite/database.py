@@ -215,10 +215,12 @@ class Database:
     def select_join(self, columns, tables, where: str="1=1", group=False, having=False, keyword=None) -> str:
         request_from = ""
         request_data = ""
-        for column in columns:
-            request_data += f"{column}, "
-        for table in tables:
-            request_from += f"{table}, "
+        if not isinstance(columns, str):
+            for column in columns:
+                request_data += f"{column}, "
+        if not isinstance(tables, str):
+            for table in tables:
+                request_from += f"{table}, "
         request_from = request_from[:-2]
         request_data = request_data[:-2]
         if not group and not having:  # SELECT FROM WHERE
