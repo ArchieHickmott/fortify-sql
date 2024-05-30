@@ -10,3 +10,4 @@ table = Table([
 
 database.new_table("myTable", table)
 
+database.select("test_database", "*")

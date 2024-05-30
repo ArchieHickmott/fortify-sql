@@ -52,7 +52,7 @@ class Database:
             self.recent_data = data
             return data
 
-    @staticmethod
+    
     def _conditional_error_catch(condition):
         def decorator(func):
             def wrapper(self, *args, **kwargs):
@@ -67,7 +67,7 @@ class Database:
         return decorator
 
     #wrapper to make a request that doesnt return data
-    @staticmethod
+    
     def _no_data(func):
         def wrapper(self, *args):
             query: str = func(self, *args)
@@ -80,7 +80,7 @@ class Database:
         return wrapper
     
     #wrapper to make a DROP request
-    @staticmethod
+    
     def _drop(func):
         def wrapper(self, *args):
             if self.allow_dropping:
@@ -96,7 +96,7 @@ class Database:
         return wrapper
 
     # wrapper to make a request that returns data
-    @staticmethod
+    
     def _data(func):
         def wrapper(self, *args) -> list:
             query: str = func(self, *args)
