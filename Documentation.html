@@ -319,7 +319,22 @@
             </div>
             <div id="3.2">
                 <h3>Read</h3>
-                
+                <div id="3.2.1">
+                    <h4>Select</h4>
+                    <p>
+                        Database.select() is a basic SELECT FROM WHERE query, it requires the columns and from arguments, where is optional by default it
+                        is '1=1'. Example usage
+                        <pre><code class="python">
+    database.select("*", "myTable")
+    # query: SELECT * FROM myTable
+    # output: the whole table
+
+    databse.select("id, name", "myTable", "id > 3")
+    # query: SELECT id, name FROM myTable WHERE id > 3
+    # output: the whole table
+                        </code></pre>
+                    </p>
+                </div>
             </div>
         </div>
         <div id="4">
