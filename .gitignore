@@ -1,3 +1,6 @@
 /venv
 sqlite.sql
 test.py
+/archive
+Features.docx
+Documentation.html

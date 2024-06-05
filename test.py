@@ -1,12 +1,3 @@
-from quicksqlite import Database, Table, column
+import fortifysql as sql
 
-database = Database("test_database.db")
-
-table = Table([
-    column("Id", type="INTEGER", primary=True, check="Id > 0"),
-    column("age", "INTEGER", check="age > 0"),
-    column("name", type="TEXT", not_null=True, unique=True)
-])
-
-database.new_table("myTable", table)
-
+database = sql.Database("test_database.db")
