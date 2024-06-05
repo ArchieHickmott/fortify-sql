@@ -104,13 +104,17 @@ try:
     database.query("CREATE TABLE IF NOT EXISTS toDrop (id, value)")
     initial_table_exists = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='toDrop'; ", save_data=True)
 
+    database.query("INSERT INTO toDrop (id, value) VALUES (1, 2)", save_data=False)
+    database.query("INSERT INTO toDrop (id, value) VALUES (2, 3)", save_data=False)
+
     database.query("DELETE FROM toDrop")
-    table_exists1 = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='toDrop'; ", save_data=True)
 
     database.query("DELETE FROM toDrop WHERE true")
-    table_exists2 = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='toDrop'; ", save_data=True)
 
-    if initial_table_exists and table_exists1 != [] and table_exists2 != []:
+    database.query("DELETE FROM toDrop WHERE 2=2")
+
+    table_exists = database.query("SELECT * FROM toDrop")
+    if initial_table_exists and table_exists != []:
         print(f"TEST {total_tests} passed ✅")
         passed_tests += 1
     else:
