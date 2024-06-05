@@ -1,7 +1,7 @@
 /venv
 sqlite.sql
 test.py
-__pycache__/
+/__pycache__/
 /archive
 Features.docx
 Documentation.html

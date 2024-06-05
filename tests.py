@@ -1,5 +1,5 @@
 """
-Tests the features of FortifySQL
+Tests the features of FortifySQL:
 •	Connect and executes queries on database
 •	Allows devs to configure if DROP is allowed on database
 •	Allows devs to configure if queries are error caught and printed to console
