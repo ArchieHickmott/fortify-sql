@@ -119,10 +119,7 @@
                         setIdsAndHrefs(nestedOl, id);
                     }
                 }
-            }
-            
-            
-            
+            }  
 
             // Initialize hierarchical ids and href attributes for the top-level ol
             document.addEventListener('DOMContentLoaded', () => {

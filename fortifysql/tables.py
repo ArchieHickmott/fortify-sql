@@ -31,7 +31,7 @@ class Table:
     def add_primary(self, column, conflict: str=False):
         for constraint in self.constraints:
             if "PRIMARY KEY" in constraint:
-                raise Exception("QuickSqLite error - Table can only have one Primary key")
+                raise Exception("FortifySQL error - Table can only have one Primary key")
         if conflict:
             self.constraints.append(f"PRIMARY KEY ({column}) ON CONFLICT {conflict}")
         else:

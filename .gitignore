@@ -2,3 +2,6 @@
 sqlite.sql
 test.py
 __pycache__/
+/archive
+Features.docx
+Documentation.html
