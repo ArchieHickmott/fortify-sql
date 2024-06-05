@@ -19,7 +19,9 @@ class Database:
     logging = False
 
     # initialise connection to database
-    def __init__(self, path: str, key="default") -> None:
+    def __init__(self, path: str, key="default", check_same_thread: bool=False) -> None:
+        self.cur = None
+        self.conn = None
         if os.path.isfile(path):
             self.key = key
             if "/" in path:
@@ -27,8 +29,7 @@ class Database:
             else:
                 self.name = path
             self.path = path
-            self.conn = sqlite3.connect(path)
-            self.cur = None
+            self.conn = sqlite3.connect(path, check_same_thread=check_same_thread)
             self.recent_data = None
         else:
             raise Exception(f"FortifySQL error - Database does not exist on path: {path}.")
@@ -37,7 +38,8 @@ class Database:
     def __del__(self) -> None:
         if self.cur is not None:
             self.cur.close()
-        self.conn.close()
+        if self.conn is not None:
+            self.conn.close()
 
     # DATABASE CONNECTION CONFIGURATION
     # allow drop
@@ -55,7 +57,7 @@ class Database:
         Database.logging = logging
     
     # Excecutes a single query on the database
-    def query(self, request: str, parameters: tuple=None, save_data=False) -> list:
+    def query(self, request: str, parameters: tuple=None, save_data=True) -> list:
         """
         Handles querying a database, includes paramaterisation for safe user inputing. \n
         SECURITY NOTE: this allows a single statement to be excecuted
@@ -87,7 +89,7 @@ class Database:
                 raise Exception(e)
 
     # Excecutes multiple queries on the database
-    def multi_query(self, request: str, parameters: tuple=None, save_data=False):
+    def multi_query(self, request: str, parameters: tuple=None, save_data=True):
         """
         Handles querying a database, includes paramaterisation for safe user inputing. will only return first statements data \n
         SECURITY NOTE: this allows multiple statements to be exceucuted at once, use query() if only
