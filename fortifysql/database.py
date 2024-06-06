@@ -7,6 +7,7 @@ import os
 import time
 from .purify import is_always_true_where, is_drop_query, is_delete_without_where, is_dangerous_delete
 import sqlparse
+import random
 
 class Database:
     """
@@ -65,8 +66,49 @@ class Database:
         try:
             parsed = sqlparse.parse(request)
             if len(parsed) == 1:
-                if (not self.allow_dropping) and (is_drop_query(request) or is_dangerous_delete(request)):
+                if (not self.allow_dropping) and is_drop_query(request):
                     raise Exception(f"Dropping is disabled on this database")
+                # Protection for delete statements
+                # won't commit a query that deletes a whole table
+                if parsed[0].get_type() == "DELETE":
+                    parsed = parsed[0]
+                    token_list = sqlparse.sql.TokenList(parsed.tokens)
+                    for token in token_list:
+                        if token.value == "FROM":
+                            from_id = token_list.token_index(token)
+                            table = token_list.token_next(from_id)[1].value
+                    
+                    cur = self.conn.cursor()
+                    cur.execute(f"SELECT * FROM {table}")
+                    if not cur.fetchall() == []:
+                        cur.close()
+                        self.conn.commit()
+                        cur = self.conn.cursor()
+                        key = random.randint(0, 100)
+                        temp_table = f"check{key}"
+                        cur.execute(f"CREATE TEMP TABLE {temp_table} AS SELECT * FROM {table} WHERE 0")
+                        cur.execute(f"INSERT INTO {temp_table} SELECT * FROM {table}")
+                        query = request.replace(table, temp_table)
+                        cur.execute(query, parameters)
+                        cur.execute(f"SELECT * FROM {temp_table}")
+                        if not cur.fetchall == []:
+                            cur.execute(f"DROP TABLE {temp_table}")
+                            self.conn.commit()
+                            cur.close()
+                            self.cur = self.conn.cursor()
+                            self.cur.execute(request, parameters)
+                            self.conn.commit()
+                            self.cur.close()
+                            self.cur = None
+                            return None
+                        else:
+                            cur.execute(f"DROP TABLE {temp_table}")
+                            self.conn.commit()
+                            cur.close()
+                    else:
+                        self.conn.commit()
+                        cur.close()
+
                 self.cur = self.conn.cursor()
                 if parameters:
                     self.cur.execute(request, parameters)
