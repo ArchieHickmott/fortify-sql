@@ -16,6 +16,7 @@ class Database:
     error = True
     allow_dropping = False
     logging = False
+    banned_statements = []
 
     # initialise connection to database
     def __init__(self, path: str, key="default", check_same_thread: bool=False) -> None:
@@ -35,9 +36,8 @@ class Database:
 
     # to safely close database
     def __del__(self) -> None:
-        if self.cur is not None:
-            self.cur.close()
         if self.conn is not None:
+            self.conn.rollback()
             self.conn.close()
 
     # DATABASE CONNECTION CONFIGURATION
@@ -55,8 +55,18 @@ class Database:
         Database.error = enable
         Database.logging = logging
     
+    # add a banned statement
+    def add_banned_statement(self, statement: str | list | tuple) -> None:
+        if isinstance(statement, list) or isinstance(statement, tuple):
+            for x in statement:
+                Database.banned_statements.append(x)
+        elif isinstance(statement, str):
+            Database.banned_statements.append(statement)
+        else:
+            return None
+
     # Excecutes a single query on the database
-    def query(self, request: str, parameters: tuple=None, save_data=True) -> list:
+    def query(self, request: str, parameters: tuple=None, save_data=True) -> list | None:
         """
         Handles querying a database, includes paramaterisation for safe user inputing. \n
         SECURITY NOTE: this allows a single statement to be excecuted
@@ -66,6 +76,10 @@ class Database:
             if len(parsed) == 1:
                 if (not self.allow_dropping) and is_drop_query(request):
                     raise Exception(f"Dropping is disabled on this database")
+                
+                if parsed[0].get_type() in self.banned_statements():
+                    return None
+
                 # Protection for delete statements
                 # won't commit a query that deletes a whole table
                 if parsed[0].get_type() == "DELETE":
@@ -141,6 +155,49 @@ class Database:
             for statement in statements:
                 if (not self.allow_dropping) and (is_drop_query(statement) or is_dangerous_delete(statement)):
                     raise Exception(f"Dropping is disabled on this database")
+                
+                if statement.get_type() in self.banned_statements():
+                    return None
+
+                if statement.get_type() == "DELETE":
+                    parsed = parsed[0]
+                    token_list = sqlparse.sql.TokenList(parsed.tokens)
+                    for token in token_list:
+                        if token.value == "FROM":
+                            from_id = token_list.token_index(token)
+                            table = token_list.token_next(from_id)[1].value
+                    
+                    cur = self.conn.cursor()
+                    cur.execute(f"SELECT * FROM {table}")
+                    if not cur.fetchall() == []:
+                        cur.close()
+                        self.conn.commit()
+                        cur = self.conn.cursor()
+                        key = random.randint(0, 100)
+                        temp_table = f"check{key}"
+                        cur.execute(f"CREATE TEMP TABLE {temp_table} AS SELECT * FROM {table} WHERE 0")
+                        cur.execute(f"INSERT INTO {temp_table} SELECT * FROM {table}")
+                        query = request.replace(table, temp_table)
+                        cur.execute(query, parameters)
+                        cur.execute(f"SELECT * FROM {temp_table}")
+                        if not cur.fetchall == []:
+                            cur.execute(f"DROP TABLE {temp_table}")
+                            self.conn.commit()
+                            cur.close()
+                            self.cur = self.conn.cursor()
+                            self.cur.execute(request, parameters)
+                            self.conn.commit()
+                            self.cur.close()
+                            self.cur = None
+                            return None
+                        else:
+                            cur.execute(f"DROP TABLE {temp_table}")
+                            self.conn.commit()
+                            cur.close()
+                    else:
+                        self.conn.commit()
+                        cur.close()
+
                 self.cur = self.conn.cursor()
                 if parameters:
                     self.cur.execute(statement, parameters)
