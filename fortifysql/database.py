@@ -11,9 +11,7 @@ import random
 
 class Database:
     """
-    This class handles the interaction between python and the database, changing key is highly recomended
-    for all methods classed as admin, the key is passed through as an argument, if the keys match then the method is
-    ran, otherwise its not
+    This class handles the interaction between python and the database.
     """
     error = True
     allow_dropping = False
