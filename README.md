@@ -9,6 +9,7 @@ Current features are:<br>
     -	Can’t use DELETE FROM table WHERE 1=1; as an alternative to drop if DROP is not allowed on database<br>
     -	Can’t run more than one statement on a query that is labelled as single statement<br>
 -	One line of code to execute a query<br>
+-   Allow statements to be set as blocked by dev so they can’t be executed on the database
 ## Quickstart
 fortify is designed arround the database class, start by importing fortifysql and specifying the path of the database to connect to
 ```python
