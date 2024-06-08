@@ -209,15 +209,15 @@ class Database:
             data = None
             statements = sqlparse.split(request)
             for statement in statements:
+                parsed = sqlparse.parse(statement)[0]
                 if (not self.allow_dropping) and (is_drop_query(statement) or is_dangerous_delete(statement)):
                     raise Exception(f"Dropping is disabled on this database")
                 
                 if self.banned_statements != []:
-                    if statement.get_type() in self.banned_statements:
+                    if parsed.get_type() in self.banned_statements:
                         return None
 
-                if statement.get_type() == "DELETE" and not self.allow_dropping:
-                    parsed = parsed[0]
+                if parsed.get_type() == "DELETE" and not self.allow_dropping:
                     token_list = sqlparse.sql.TokenList(parsed.tokens)
                     for token in token_list:
                         if token.value == "FROM":

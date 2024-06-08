@@ -26,8 +26,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 # Allows devs to configure if DROP is allowed on database
 total_tests += 1
@@ -51,8 +51,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 # Allows devs to configure if queries are error caught and printed to console
 total_tests += 1
@@ -73,8 +73,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 # Basic injection proof
 total_tests += 1
@@ -93,8 +93,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 # Can’t use DELETE FROM table WHERE 1=1; as an alternative to drop if DROP is not allowed on database
 total_tests += 1
@@ -119,8 +119,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 # Can’t run more than one statement on a query that is labelled as single statement
 total_tests += 1
@@ -136,8 +136,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 # Configure banned statements
 total_tests += 1
@@ -151,8 +151,8 @@ try:
         passed_tests += 1
     else:
         raise Exception("") 
-except:
-    print(f"TEST {total_tests} failed ❌")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
 
 database.allow_drop(True)
 database.query("DROP TABLE IF EXISTS toDrop")
