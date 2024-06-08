@@ -1,7 +1,9 @@
 /venv
 sqlite.sql
 test.py
-/__pycache__/
+/fortifysql/__pycache__/
 /archive
 Features.docx
 Documentation.html
+pm_database.db
+test.py

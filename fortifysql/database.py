@@ -55,6 +55,10 @@ class Database:
         Database.error = enable
         Database.logging = logging
     
+    #allows dev to set the row factory
+    def row_factory(self, factory) -> None:
+        self.conn.row_factory = factory
+
     # add a banned statement
     def add_banned_statement(self, statement: str | list | tuple) -> None:
         if isinstance(statement, list) or isinstance(statement, tuple):
@@ -65,6 +69,16 @@ class Database:
         else:
             return None
 
+    # remove banned statement
+    def remove_banned_statement(self, statement: str | list | tuple):
+        if isinstance(statement, list) or isinstance(statement, tuple):
+            for x in statement:
+                Database.banned_statements.remove(x)
+        elif isinstance(statement, str):
+            Database.banned_statements.remove(statement)
+        else:
+            return None
+        
     # Excecutes a single query on the database
     def query(self, request: str, parameters: tuple=None, save_data=True) -> list | None:
         """
@@ -77,8 +91,9 @@ class Database:
                 if (not self.allow_dropping) and is_drop_query(request):
                     raise Exception(f"Dropping is disabled on this database")
                 
-                if parsed[0].get_type() in self.banned_statements():
-                    return None
+                if self.banned_statements != []:
+                    if parsed[0].get_type() in self.banned_statements():
+                        return None
 
                 # Protection for delete statements
                 # won't commit a query that deletes a whole table
@@ -156,8 +171,9 @@ class Database:
                 if (not self.allow_dropping) and (is_drop_query(statement) or is_dangerous_delete(statement)):
                     raise Exception(f"Dropping is disabled on this database")
                 
-                if statement.get_type() in self.banned_statements():
-                    return None
+                if self.banned_statements != []:
+                    if statement.get_type() in self.banned_statements():
+                        return None
 
                 if statement.get_type() == "DELETE":
                     parsed = parsed[0]

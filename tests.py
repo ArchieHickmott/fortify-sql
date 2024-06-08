@@ -139,6 +139,21 @@ try:
 except:
     print(f"TEST {total_tests} failed ❌")
 
+# Configure banned statements
+total_tests += 1
+try:
+    database.add_banned_statement("SELECT")
+    data = database.query("SELECT * FROM people")
+
+    
+    if test_pass:
+        print(f"TEST {total_tests} passed ✅")
+        passed_tests += 1
+    else:
+        raise Exception("") 
+except:
+    print(f"TEST {total_tests} failed ❌")
+
 database.allow_drop(True)
 database.query("DROP TABLE IF EXISTS toDrop")
 print(f"\nTESTING DONE \n{passed_tests}/{total_tests} passed {round((passed_tests/total_tests) * 100, 2)}%")
