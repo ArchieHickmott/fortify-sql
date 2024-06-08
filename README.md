@@ -11,6 +11,10 @@ Current features are:<br>
 -	One line of code to execute a query<br>
 -   Allow statements to be set as blocked by dev so they can’t be executed on the database
 ## Quickstart
+install using pip
+```shell
+pip install fortifysql
+```
 fortify is designed arround the database class, start by importing fortifysql and specifying the path of the database to connect to
 ```python
 from fortifysql import Database
