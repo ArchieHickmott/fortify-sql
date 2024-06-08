@@ -63,6 +63,7 @@ class Database:
     def add_banned_statement(self, statement: str | list | tuple) -> None:
         if isinstance(statement, list) or isinstance(statement, tuple):
             for x in statement:
+                print(x)
                 Database.banned_statements.append(x)
         elif isinstance(statement, str):
             Database.banned_statements.append(statement)
@@ -92,7 +93,7 @@ class Database:
                     raise Exception(f"Dropping is disabled on this database")
                 
                 if self.banned_statements != []:
-                    if parsed[0].get_type() in self.banned_statements():
+                    if parsed[0].get_type() in self.banned_statements:
                         return None
 
                 # Protection for delete statements
@@ -172,7 +173,7 @@ class Database:
                     raise Exception(f"Dropping is disabled on this database")
                 
                 if self.banned_statements != []:
-                    if statement.get_type() in self.banned_statements():
+                    if statement.get_type() in self.banned_statements:
                         return None
 
                 if statement.get_type() == "DELETE":

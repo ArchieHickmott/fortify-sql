@@ -5,7 +5,7 @@ from fortifysql import Database
 import sqlite3
 
 database = Database("pm_database.db")
-database.error_catch(True, True)
+database.error_catch(False, True)
 database.allow_drop(False)
 database.add_banned_statement(["DELETE", "INSERT"])
 database.row_factory(sqlite3.Row)
