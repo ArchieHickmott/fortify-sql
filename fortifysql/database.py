@@ -5,7 +5,7 @@ This script handles the interaction between python and the database
 import sqlite3
 import os
 import time
-from .purify import is_always_true_where, is_drop_query, is_delete_without_where, is_dangerous_delete
+from .purify import is_drop_query, is_dangerous_delete
 import sqlparse
 import random
 
@@ -15,15 +15,18 @@ class Database:
     """
     error = True
     allow_dropping = False
+    check_delete_statements = True
     logging = False
     banned_statements = []
+    cur = None
+    conn = None
 
     # initialise connection to database
-    def __init__(self, path: str, key="default", check_same_thread: bool=False) -> None:
-        self.cur = None
-        self.conn = None
+    def __init__(self, path: str, check_same_thread: bool=False) -> None:
+        """
+        Create a connection to a database, checks if the database exists
+        """
         if os.path.isfile(path):
-            self.key = key
             if "/" in path:
                 self.name = path.rsplit('/', 1)[1]
             else:
@@ -36,6 +39,9 @@ class Database:
 
     # to safely close database
     def __del__(self) -> None:
+        """
+        Rolls back any uncommited transactions on garbage collection
+        """
         if self.conn is not None:
             self.conn.rollback()
             self.conn.close()
@@ -47,6 +53,7 @@ class Database:
         Enables methods that drop aspects of a database
         """
         Database.allow_dropping = allow
+
     # enable error catching on queries
     def error_catch(self, enable: bool, logging: bool = False) -> None:
         """
@@ -57,10 +64,30 @@ class Database:
     
     #allows dev to set the row factory
     def row_factory(self, factory) -> None:
+        """
+        sets the row factory of the connection \n refer to SQLite3 documentation@https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-row-factory for more info
+        """
         self.conn.row_factory = factory
+    
+    def enable_delete_checking(self):
+        """
+        Delete checking creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
+        This can be computationally expensive for very large tables.
+        """
+        Database.check_delete_statements = True
+
+    def disable_delete_checking(self):
+        """
+        Delete checking creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
+        This can be computationally expensive for very large tables.
+        """
+        Database.check_delete_statements = False
 
     # add a banned statement
     def add_banned_statement(self, statement: str | list | tuple) -> None:
+        """
+        If a statement is added it measn it cannot be run on the database unless it is removed with remove_banned_statement()
+        """
         if isinstance(statement, list) or isinstance(statement, tuple):
             for x in statement:
                 print(x)
@@ -72,13 +99,27 @@ class Database:
 
     # remove banned statement
     def remove_banned_statement(self, statement: str | list | tuple):
+        """
+        Allows a once banned statement to be executed on the database
+        """
         if isinstance(statement, list) or isinstance(statement, tuple):
             for x in statement:
-                Database.banned_statements.remove(x)
+                if x in self.banned_statements:
+                    Database.banned_statements.remove(x)
         elif isinstance(statement, str):
-            Database.banned_statements.remove(statement)
+            if statement in self.banned_statements:
+                Database.banned_statements.remove(statement)
         else:
             return None
+    
+    def backup(self, path="", extension="db"):
+        """
+        Creates a backup of the database as path/time.extension ("/time.db" by default) where time us the time of the backup
+        """
+        path = path + "/" + str(time.asctime().replace(":", "-") + "." + extension)
+        with open(self.path, "rb") as src_file:
+            with open(path, "wb") as dst_file:
+                dst_file.write(src_file.read())
         
     # Excecutes a single query on the database
     def query(self, request: str, parameters: tuple=None, save_data=True) -> list | None:
@@ -98,7 +139,7 @@ class Database:
 
                 # Protection for delete statements
                 # won't commit a query that deletes a whole table
-                if parsed[0].get_type() == "DELETE":
+                if parsed[0].get_type() == "DELETE" and not self.allow_dropping:
                     parsed = parsed[0]
                     token_list = sqlparse.sql.TokenList(parsed.tokens)
                     for token in token_list:
@@ -162,8 +203,7 @@ class Database:
     def multi_query(self, request: str, parameters: tuple=None, save_data=True):
         """
         Handles querying a database, includes paramaterisation for safe user inputing. will only return first statements data \n
-        SECURITY NOTE: this allows multiple statements to be exceucuted at once, use query() if only
-        one statement will be run
+        SECURITY NOTE: this allows multiple statements to be exceucuted at once, use query() if only one statement will be run
         """
         try:
             data = None
@@ -176,7 +216,7 @@ class Database:
                     if statement.get_type() in self.banned_statements:
                         return None
 
-                if statement.get_type() == "DELETE":
+                if statement.get_type() == "DELETE" and not self.allow_dropping:
                     parsed = parsed[0]
                     token_list = sqlparse.sql.TokenList(parsed.tokens)
                     for token in token_list:

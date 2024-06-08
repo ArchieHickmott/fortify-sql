@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>QUICKSQLITE | Documentation</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+        <style>
+            nav a {
+                text-decoration: underline;
+                color: black;
+            }
+            nav a:hover {
+                text-decoration: underline dotted;
+                color: darkgray;
+            }
+            ol {
+                counter-reset: item;
+            }
+            li {
+                display: block;
+            }
+            ol > li {
+                counter-increment: item;
+            }
+            ol > li::before {
+                content: counters(item, ".") ". ";
+                margin-left: -20px; 
+            }
+            ol ol {
+                counter-reset: item;
+            }
+            ol ol > li {
+                counter-increment: item;
+            }
+            ol ol > li::before {
+                content: counters(item, ".") " ";
+                margin-left: -20px; 
+            }
+            ol ol ol {
+                counter-reset: item;
+            }
+            ol ol ol > li {
+                counter-increment: item;
+            }
+            ol ol ol > li::before {
+                content: counters(item, ".") " ";
+                margin-left: -20px; 
+            }
+        </style>
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        
+        <header>
+            <h1><b>
+                FortifySQL
+            </b></h1>
+            <p>
+                An extension of the SQLite3 library for python. FortifySQL has a focus on mitigation of SQL injection and easy development.
+                Contains database connection, configuration, and querying.
+            </p>
+        </header>
+        <nav>
+            <ol>
+                <li>Database connection/managment
+                    <ol>
+                        <li>Connecting</li>
+                        <li>Error Catching</li>
+                        <li>Allow Drop</li>
+                        <li>Banned Statements</li>
+                        <li>Row Factory</li>
+                        <li>Delete Checking</li>
+                        <li>Backups</li>
+                    </ol>
+                </li>
+                <li>Queries
+                    <ol>
+                        <li>Query</li>
+                        <li>Multi Query</li>
+                    </ol>
+                </li>
+                <li>Bug fixes</li>
+                <li>IP statement</li>
+            </ol>
+        </nav>
+        <script>
+            function setIdsAndHrefs(ol, prefix) {
+                const items = ol.children;
+                for (let i = 0; i < items.length; i++) {
+                    const li = items[i];
+                    const id = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+                   
+                    const a = document.createElement('a');
+                    a.href = `#${id}`;
+                    const textNode = li.firstChild;
+                    if (textNode.nodeType === 3) { // Check if it's a text node
+                        a.innerHTML = textNode.textContent;
+                        textNode.replaceWith(a);
+                    } else {
+                        a.innerHTML = li.textContent;
+                        li.innerHTML = '';
+                        li.appendChild(a);
+                    }
+            
+                    const nestedOl = li.querySelector('ol');
+                    if (nestedOl) {
+                        setIdsAndHrefs(nestedOl, id);
+                    }
+                }
+            }  
+
+            // Initialize hierarchical ids and href attributes for the top-level ol
+            document.addEventListener('DOMContentLoaded', () => {
+                const topOl = document.querySelector('nav > ol');
+                setIdsAndHrefs(topOl, '');
+            
+                // Smooth scrolling function
+                document.querySelectorAll('nav a').forEach(anchor => {
+                    anchor.addEventListener('click', function(e) {
+                        e.preventDefault();
+            
+                        const targetId = this.getAttribute('href').substring(1);
+                        const targetElement = document.getElementById(targetId);
+            
+                        if (targetElement) {
+                            const offset = getOffset(targetElement);
+                            window.scrollTo({
+                                top: offset.top,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                });
+            
+                // Function to get offset of an element
+                function getOffset(el) {
+                    const rect = el.getBoundingClientRect();
+                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    return { top: rect.top + scrollTop, left: rect.left + scrollLeft };
+                }
+            });
+        </script>
+        <div id="1">
+            <h2>Database connection/managment</h2>
+            <p>
+                It is recomended to import QuickSQLite as such:
+                <pre><code class="python">
+    from quicksqlite import Database, sqlite3
+                </code></pre>
+            </p>
+            <div id="1.1">
+                <h3>Connecting</h3>
+                <p>
+                    connection to the database happens during the initialisation of the Database class. When creating the database class, the file path
+                    for the database is passed through as the singular argument. e.g. 
+                    <pre><code type="python">   database = Database("my-database-path.db")</code></pre>
+                    optional argument 'check_same_thread' configures the connection to check that a request is made on the same thread, by default this is disabled
+                </p>
+            </div>
+            <div id="1.2">
+                <h3>Error Catching</h3>
+                <p>Error Catching in QuickSQLite is very simple. All it does is it wraps the query with an error catcher and prints any exceptions
+                    that occur. Error catching is disabled by default, to enable/disable: 
+                    <pre><code class="python">
+    database = Database("mydb.db")
+    database.error_catching(True) # enables error catching
+    database.error_catching(False) # disables error catching
+                    </code></pre>
+                    When error catching is enabled, there is the option to log errors to console, this is the second optional argument
+                </p>
+            </div>
+            <div id="1.3">
+                <h3>Allow Drop</h3>
+                <p>Enabling Drop on a database will Allow SQL queries such as DROP DATABASE and DROP TABLE. If these queries are never going to be needed
+                    to be excecuted with the Database class then Drop should be disabled:
+                    <pre><code class="python">
+    database = Database("mydb.db")
+    database.allow_drop(True) # enables drop
+    database.allow_drop(False) # disables drop
+                    </code></pre>
+                </p>
+            </div>
+            <div id="1.4">
+                <h3>Banned Statements</h3>
+                If a statement is added it measn it cannot be run on the database unless it is removed with remove_banned_statement()
+                <pre><code class="python">
+    database.add_banned_statement("DELETE") # the DELETE statement will never be executed
+    database.add_banned_statement(("DELETE", "DROP", "INSERT")) # the DELETE, DROP and INSERT statement will never be executed
+                </code></pre>
+                remove_banned_statement() allows a once banned statement to be executed on the database
+                <pre><code class="python">
+    database.remove_banned_statement("DELETE") # the DELETE statement can now be executed
+    database.remove_banned_statement(("DELETE", "DROP", "INSERT")) # the DELETE, DROP and INSERT statement can now be executed
+                </code></pre>
+            </div>
+            <div id="1.5">
+                <h3>Row Factory</h3>
+                <p>
+                    In SQLite3, row factories can make handling data that comes from requests easier for python, refer to 
+                    <a href="https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-row-factory">The SQLite3 Documentation</a> for more info<br>
+                    They can be added with the row_factory() method
+                    <pre><code class="python">
+    database.row_factory(sqlite3.Row)               
+                    </code></pre>
+                </p>
+            </div>
+            <div id="1.6">
+                <h3>Delete Checking</h3>
+                <p>
+                    Delete checking in FortifySQL is enabled by default. It creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
+                    This can be computationally expensive for very large tables.<br>
+                    To enable/disable:
+                    <pre><code class="python">
+    database.enable_delete_checking()
+    database.disable_delete_checking()
+                    </code></pre>
+                </p>
+            </div>
+            <div id="1.7">
+                <h3>Backups</h3>
+                <p>
+    database.backup(path, extension), Creates a backup of the database as path/time.extension ("/time.db" by default) where time us the time of the backup
+                </p>
+            </div>
+        </div>
+        <div id="2">
+            <h2>
+                Queries
+            </h2>
+            <p>
+                In FortifySQL, every query will go through a series of security checks. One of the most important feature is the
+                checking for multiple statements. If executing multiple statements in a single query is required then use the multi_query() method.
+                Otherwhise, ALWAYS use the query() method. This prevents injection of a second statement.<br>
+                <br>
+                The use of formatted strings or any other form of prepared statement is highly discouraged to preven SQL injection. While this 
+                Library does have some mitigations for SQL injection, IT IS NOT a full security solution. using parameterisation is a must
+            </p>
+            <div id="2.1">
+                <h3>Query</h3>
+                <p> 
+                    The query method handles querying a database, it includes paramaterisation for safe user inputing. \n
+                    SECURITY NOTE: this allows a single statement to be excecuted
+                </p>
+                <p>
+                    
+                    Paramaterisation works the same as <a href="https://docs.python.org/3/library/sqlite3.html#how-to-use-placeholders-to-bind-values-in-sql-queries">SQLite3</a>
+                    for the query:
+                    <pre><code class="python">
+    database.query("SELECT * FROM myTable WHERE id=?;", (23,))
+                    </code></pre>
+                    the question mark is replaced with 23. So the actual query executed will be:
+                    <pre><code class="SQL">
+    SELECT * FROM myTable WHERE id=23;
+                    </code></pre>
+                </p>
+            </div>
+            <div id="2.2">
+                <h3>Multi-Query</h3>
+                <p>
+                    multi_query() has the same functionality as query() (refer <a href="#2.1">above</a>) however a query with multiple statements is allowed, it is 
+                    not recomended to use multi_query() unless necessary
+                </p>
+            </div>
+        </div>
+        <div id="3">
+            <h2>Bug Fixes</h2>
+            <p>
+                This code is tested for basic use cases, I am a student and don't have time to peform rigerous testing. As such reporting any and every bug/unexpected 
+                behavior to the <a href="https://github.com/Nerd-yee/fortify-sql">Github repository</a>. Any feedback is also well apreciated as I'm not a proffesional programer
+                and am always trying to learn
+            </p>
+        </div>
+        <footer id="4">
+            <h2>IP statement</h2>
+            All code remains Intellectuall property of Archie Hickmott. Feel free to use/modify as you desire, just don't copy paste and pretend you made it
+        </footer>
+    </body>
+</html>

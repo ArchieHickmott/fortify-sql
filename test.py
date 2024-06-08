@@ -1,8 +1,7 @@
 """
 Testing script to verify library works
 """
-from fortifysql import Database
-import sqlite3
+from fortifysql import Database, sqlite3
 
 database = Database("pm_database.db")
 database.error_catch(False, True)
