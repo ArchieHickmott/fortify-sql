@@ -1,13 +1,10 @@
+<!-- DOCUMENTATION for fortifysql -->
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
 <html>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>QUICKSQLITE | Documentation</title>
+        <title>FortifySQL | Documentation</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -158,9 +155,9 @@
         <div id="1">
             <h2>Database connection/managment</h2>
             <p>
-                It is recomended to import QuickSQLite as such:
+                It is recomended to import FortifySQL as such:
                 <pre><code class="python">
-    from quicksqlite import Database, sqlite3
+    from FortifySQL import Database, sqlite3
                 </code></pre>
             </p>
             <div id="1.1">
@@ -182,6 +179,10 @@
     database.error_catching(False) # disables error catching
                     </code></pre>
                     When error catching is enabled, there is the option to log errors to console, this is the second optional argument
+                    <pre><code class="python">
+    database.error_catching(True, True) # enables error catching with console logging
+    database.error_catching(True, False) # enables error catching without console logging
+                    </code></pre>
                 </p>
             </div>
             <div id="1.3">
@@ -281,7 +282,7 @@
             <h2>Bug Fixes</h2>
             <p>
                 This code is tested for basic use cases, I am a student and don't have time to peform rigerous testing. As such reporting any and every bug/unexpected 
-                behavior to the <a href="https://github.com/Nerd-yee/fortify-sql">Github repository</a>. Any feedback is also well apreciated as I'm not a proffesional programer
+                behavior to the <a href="https://github.com/ArchieHickmott/fortify-sql">Github repository</a>. Any feedback is also well apreciated as I'm not a proffesional programer
                 and am always trying to learn
             </p>
         </div>

@@ -1,0 +1,11 @@
+README.md
+setup.py
+fortifysql/__init__.py
+fortifysql/database.py
+fortifysql/purify.py
+fortifysql/tables.py
+fortifysql.egg-info/PKG-INFO
+fortifysql.egg-info/SOURCES.txt
+fortifysql.egg-info/dependency_links.txt
+fortifysql.egg-info/requires.txt
+fortifysql.egg-info/top_level.txt
