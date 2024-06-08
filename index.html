@@ -83,6 +83,7 @@
                         <li>Row Factory</li>
                         <li>Delete Checking</li>
                         <li>Backups</li>
+                        <li>Debuging</li>
                     </ol>
                 </li>
                 <li>Queries
@@ -238,8 +239,8 @@
                     This can be computationally expensive for very large tables.<br>
                     To enable/disable:
                     <pre><code class="python">
-    database.enable_delete_checking()
-    database.disable_delete_checking()
+    database.delete_checking(True)
+    database.delete_checking(False)
                     </code></pre>
                 </p>
             </div>
@@ -248,6 +249,29 @@
                 <p>
     database.backup(path, extension), Creates a backup of the database as path/time.extension ("/time.db" by default) where time is the time of the backup
                 </p>
+            </div>
+            <div id="2.8">
+                <h3>Logging</h3>
+                <p>
+                    sometimes it is helpfull to see what requests are being executed on a database, this can be configured with the query_logging() method.
+                    <pre><code class="python">
+    database.query_logging(True)
+    database.query_logging(False)
+                    </code></pre>
+                    If a custom logging function is warrented then that can be passed through
+                </p>
+                <pre><code class="python">
+    def log_query(statement):
+        print(f"the executed statement is: {statement}")
+    
+    database.query_logging(True, log_query)
+    database.query("SELECT * FROM myTable")
+                </code></pre>
+                <pre><code>
+    the excecuted statement is: BEGIN
+    the excecuted statement is: SELECT * FROM myTable
+    the excecuted statement is: COMMIT
+                </code></pre>
             </div>
         </div>
         <div id="3">

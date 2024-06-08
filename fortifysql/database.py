@@ -46,6 +46,9 @@ class Database:
             self.conn.rollback()
             self.conn.close()
 
+    def logger(self, statement):
+        print(f"[{self.name}] {statement}")
+
     # DATABASE CONNECTION CONFIGURATION
     # allow drop
     def allow_drop(self, allow: bool) -> None:
@@ -62,27 +65,32 @@ class Database:
         Database.error = enable
         Database.logging = logging
     
+    def query_logging(self, enable: bool, func = None):
+        """
+        Enables query logging, prints form [database name] query
+        """
+        if not enable:
+            self.conn.set_trace_callback(None)
+            return None
+        if func is None:
+            self.conn.set_trace_callback(self.logger)
+        else:
+            self.conn.set_trace_callback(func)
+
     #allows dev to set the row factory
     def row_factory(self, factory) -> None:
         """
         sets the row factory of the connection \n refer to SQLite3 documentation@https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-row-factory for more info
         """
         self.conn.row_factory = factory
-    
-    def enable_delete_checking(self):
+
+    def delete_checking(self, enable: bool = True):
         """
         Delete checking creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
         This can be computationally expensive for very large tables.
         """
-        Database.check_delete_statements = True
-
-    def disable_delete_checking(self):
-        """
-        Delete checking creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
-        This can be computationally expensive for very large tables.
-        """
-        Database.check_delete_statements = False
-
+        Database.check_delete_statements = enable
+        
     # add a banned statement
     def add_banned_statement(self, statement: str | list | tuple) -> None:
         """
