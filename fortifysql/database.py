@@ -8,7 +8,7 @@ import time
 from .purify import is_drop_query, is_dangerous_delete
 import sqlparse
 import random
-from typing import Any
+from typing import Any, Callable
 
 class Database:
     """
@@ -79,7 +79,7 @@ class Database:
             self.conn.set_trace_callback(func)
 
     #allows dev to set the row factory
-    def row_factory(self, factory: sqlite3.Row | function | Any) -> None:
+    def row_factory(self, factory: sqlite3.Row | Callable | Any) -> None:
         """
         sets the row factory of the connection \n refer to SQLite3 documentation@https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-row-factory for more info
         """
