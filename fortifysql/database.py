@@ -23,20 +23,25 @@ class Database:
     conn = None
 
     # initialise connection to database
-    def __init__(self, path: str, check_same_thread: bool=False) -> None:
+    def __init__(self, path: str, check_same_thread: bool=False, name: str = "") -> None:
         """
         Create a connection to a database, checks if the database exists
         """
         if os.path.isfile(path):
-            if "/" in path:
-                self.name = path.rsplit('/', 1)[1]
-            else:
-                self.name = path
-            self.path = path
-            self.conn = sqlite3.connect(path, check_same_thread=check_same_thread)
-            self.recent_data = None
+            if name != "":
+                if "/" in path:
+                    self.name = path.rsplit('/', 1)[1]
+                else:
+                    self.name = path
+            else: 
+                self.name = name
+        elif path == ":memory:":
+            self.name = "memory"
         else:
             raise Exception(f"FortifySQL error - Database does not exist on path: {path}.")
+        self.path = path
+        self.conn = sqlite3.connect(path, check_same_thread=check_same_thread)
+        self.recent_data = None
 
     # to safely close database
     def __del__(self) -> None:
@@ -66,7 +71,7 @@ class Database:
         Database.error = enable
         Database.logging = logging
     
-    def query_logging(self, enable: bool, func: function | None = None) -> None:
+    def query_logging(self, enable: bool, func: Callable | None = None) -> None:
         """
         Enables query logging, prints form [database name] query
         """
@@ -127,6 +132,7 @@ class Database:
         with open(self.path, "rb") as src_file:
             with open(path, "wb") as dst_file:
                 dst_file.write(src_file.read())
+        return path
         
     # Excecutes a single query on the database
     def query(self, request: str, parameters: tuple=None, save_data=True) -> list | None:
