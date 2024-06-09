@@ -8,6 +8,7 @@ import time
 from .purify import is_drop_query, is_dangerous_delete
 import sqlparse
 import random
+from typing import Any
 
 class Database:
     """
@@ -46,7 +47,7 @@ class Database:
             self.conn.rollback()
             self.conn.close()
 
-    def logger(self, statement):
+    def logger(self, statement: str) -> None:
         print(f"[{self.name}] {statement}")
 
     # DATABASE CONNECTION CONFIGURATION
@@ -65,7 +66,7 @@ class Database:
         Database.error = enable
         Database.logging = logging
     
-    def query_logging(self, enable: bool, func = None):
+    def query_logging(self, enable: bool, func: function | None = None) -> None:
         """
         Enables query logging, prints form [database name] query
         """
@@ -78,13 +79,13 @@ class Database:
             self.conn.set_trace_callback(func)
 
     #allows dev to set the row factory
-    def row_factory(self, factory) -> None:
+    def row_factory(self, factory: sqlite3.Row | function | Any) -> None:
         """
         sets the row factory of the connection \n refer to SQLite3 documentation@https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-row-factory for more info
         """
         self.conn.row_factory = factory
 
-    def delete_checking(self, enable: bool = True):
+    def delete_checking(self, enable: bool = True) -> None:
         """
         Delete checking creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
         This can be computationally expensive for very large tables.
@@ -106,7 +107,7 @@ class Database:
             return None
 
     # remove banned statement
-    def remove_banned_statement(self, statement: str | list | tuple):
+    def remove_banned_statement(self, statement: str | list | tuple) -> None:
         """
         Allows a once banned statement to be executed on the database
         """
@@ -117,10 +118,8 @@ class Database:
         elif isinstance(statement, str):
             if statement in self.banned_statements:
                 Database.banned_statements.remove(statement)
-        else:
-            return None
     
-    def backup(self, path="", extension="db"):
+    def backup(self, path: str = "", extension: str = "db") -> None:
         """
         Creates a backup of the database as path/time.extension ("/time.db" by default) where time us the time of the backup
         """
