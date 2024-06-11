@@ -11,12 +11,14 @@ Current features are:<br>
 -	One line of code to execute a query<br>
 -   Allow statements to be set as blocked by dev so they can’t be executed on the database
 
-## What's New In Beta 0.4.0
- - Can connect to database in memory
- - tests.py has no requirements, other than FortifySQL of course
- - Improved documentation website
- - Errors no longer say FortifySQL, to prevent Error based information gathering
- - Can import database configurations from JSON file/string
+# Beta 0.4.0 New Features:
+- Can connect to database in memory
+- tests.py has no requirements, other than FortifySQL of course
+- Improved documentation website
+- Errors no longer say FortifySQL, to prevent Error based information gathering
+- Can ban SQL syntax
+- All queries executed on database can be logged
+- Can import database configurations from JSON file/string
 
 ## Quickstart
 install using pip
