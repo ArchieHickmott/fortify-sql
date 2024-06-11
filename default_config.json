@@ -1,0 +1,11 @@
+{
+    "allow_dropping": false, 
+    "check_delete_statements": true,
+    "error_catching": true,
+    "error_logging": false,
+    "banned_statements": [],
+    "banned_syntax": [],
+
+    "default_query_logger": false,
+    "default_row_factory": true
+}
