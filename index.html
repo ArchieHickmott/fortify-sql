@@ -106,7 +106,7 @@
                     const a = document.createElement('a');
                     a.href = `#${id}`;
                     const textNode = li.firstChild;
-                    if (textNode.nodeType === 3) {
+                    if (textNode.nodeType === 3) { // Check if it's a text node
                         a.innerHTML = textNode.textContent;
                         textNode.replaceWith(a);
                     } else {
@@ -122,10 +122,36 @@
                 }
             }  
 
+            // Initialize hierarchical ids and href attributes for the top-level ol
             document.addEventListener('DOMContentLoaded', () => {
                 const topOl = document.querySelector('nav > ol');
                 setIdsAndHrefs(topOl, '');
-                
+            
+                // Smooth scrolling function
+                document.querySelectorAll('nav a').forEach(anchor => {
+                    anchor.addEventListener('click', function(e) {
+                        e.preventDefault();
+            
+                        const targetId = this.getAttribute('href').substring(1);
+                        const targetElement = document.getElementById(targetId);
+            
+                        if (targetElement) {
+                            const offset = getOffset(targetElement);
+                            window.scrollTo({
+                                top: offset.top,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                });
+            
+                // Function to get offset of an element
+                function getOffset(el) {
+                    const rect = el.getBoundingClientRect();
+                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    return { top: rect.top + scrollTop, left: rect.left + scrollLeft };
+                }
             });
         </script>
         <div id="1" style="margin-bottom: 100px">

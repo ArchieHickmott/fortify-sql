@@ -1,27 +1,21 @@
 """
 This script handles the interaction between python and the database
 """
+import sqlparse
 
 import sqlite3
 import os
 import time
-from .purify import is_drop_query, is_dangerous_delete
-import sqlparse
 import random
-from typing import Any, Callable
+import json
+from typing import Callable, Iterable
+
+from .purify import is_drop_query, is_dangerous_delete
 
 class Database:
     """
-    This class handles the interaction between python and the database.
+    This class handles the interaction between python and the self.
     """
-    error = True
-    allow_dropping = False
-    check_delete_statements = True
-    logging = False
-    banned_statements = []
-    cur = None
-    conn = None
-
     # initialise connection to database
     def __init__(self, path: str, check_same_thread: bool=False, name: str = "") -> None:
         """
@@ -38,7 +32,16 @@ class Database:
         elif path == ":memory:":
             self.name = "memory"
         else:
-            raise Exception(f"FortifySQL error - Database does not exist on path: {path}.")
+            raise Exception(f"SQL error - Database does not exist on path: {path}.")
+
+        self.error = False
+        self.allow_dropping = False
+        self.check_delete_statements = True
+        self.error_logging = False
+        self.banned_statements = []
+        self.banned_syntax = []
+
+        self.cur = None
         self.path = path
         self.conn = sqlite3.connect(path, check_same_thread=check_same_thread)
         self.recent_data = None
@@ -52,6 +55,36 @@ class Database:
             self.conn.rollback()
             self.conn.close()
 
+    def import_configuration(self, path: str = "", json_string: str = ""):
+        """
+        Imports a database configuration from a JSON file or a JSON string \n
+        For infromation on how to format the JSON go to: https://archiehickmott.github.io/fortify-sql/
+        """
+        is_path = path != ""
+        is_json = json_string != ""
+        config = None
+        if is_path and not is_json:
+            with open(path, 'r') as file:
+                config = json.load(file)
+        elif is_json and not is_path:
+            config = json.loads(json_string)
+        elif is_path and is_json:
+            raise Exception("Can't have import configuration from file and string at the same time")
+        else:
+            raise Exception("No arguments given to import_configuration()")
+        
+        self.error = config["error_catching"]
+        self.allow_dropping = config["allow_dropping"]
+        self.check_delete_statements = config["check_delete_statements"]
+        self.error_logging = config["error_logging"]
+        self.banned_statements = config["banned_statements"]
+        self.banned_syntax = config["banned_syntax"]
+
+        if config["default_query_logger"]:
+            self.query_logging(True)
+        if config["default_row_factory"]:
+            self.row_factory(sqlite3.Row)
+
     def logger(self, statement: str) -> None:
         print(f"[{self.name}] {statement}")
 
@@ -61,15 +94,15 @@ class Database:
         """
         Enables methods that drop aspects of a database
         """
-        Database.allow_dropping = allow
+        self.allow_dropping = allow
 
     # enable error catching on queries
     def error_catch(self, enable: bool, logging: bool = False) -> None:
         """
         Enables error catching on queries made to database
         """
-        Database.error = enable
-        Database.logging = logging
+        self.error = enable
+        self.logging = logging
     
     def query_logging(self, enable: bool, func: Callable | None = None) -> None:
         """
@@ -84,7 +117,7 @@ class Database:
             self.conn.set_trace_callback(func)
 
     #allows dev to set the row factory
-    def row_factory(self, factory: sqlite3.Row | Callable | Any) -> None:
+    def row_factory(self, factory: sqlite3.Row | Callable = sqlite3.Row) -> None:
         """
         sets the row factory of the connection \n refer to SQLite3 documentation@https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-row-factory for more info
         """
@@ -95,34 +128,60 @@ class Database:
         Delete checking creates a temporary copy of a table before executing a delete statement, it will check that the table still exists after the delete statement \n
         This can be computationally expensive for very large tables.
         """
-        Database.check_delete_statements = enable
+        self.check_delete_statements = enable
         
     # add a banned statement
-    def add_banned_statement(self, statement: str | list | tuple) -> None:
+    def add_banned_statement(self, statement: str | Iterable[str]) -> None:
         """
-        If a statement is added it measn it cannot be run on the database unless it is removed with remove_banned_statement()
+        If a statement is added it means it cannot be run on the database unless it is removed with remove_banned_statement()
         """
         if isinstance(statement, list) or isinstance(statement, tuple):
             for x in statement:
                 print(x)
-                Database.banned_statements.append(x)
+                self.banned_statements.append(x.upper())
         elif isinstance(statement, str):
-            Database.banned_statements.append(statement)
+            self.banned_statements.append(statement.upper())
         else:
             return None
 
     # remove banned statement
-    def remove_banned_statement(self, statement: str | list | tuple) -> None:
+    def remove_banned_statement(self, statement: str | Iterable[str]) -> None:
         """
         Allows a once banned statement to be executed on the database
         """
         if isinstance(statement, list) or isinstance(statement, tuple):
             for x in statement:
                 if x in self.banned_statements:
-                    Database.banned_statements.remove(x)
+                    self.banned_statements.remove(x)
         elif isinstance(statement, str):
             if statement in self.banned_statements:
-                Database.banned_statements.remove(statement)
+                self.banned_statements.remove(statement)
+
+    # add a banned syntax
+    def add_banned_syntax(self, syntax: str | Iterable[str]) -> None:
+        """
+        If some syntax is added it means it cannot be run on the database unless it is removed with remove_banned_syntax()
+        """
+        if isinstance(syntax, list) or isinstance(syntax, tuple):
+            for x in syntax:
+                if x in self.banned_syntax:
+                    self.banned_syntax.append(x)
+        elif isinstance(syntax, str):
+            if syntax in self.banned_syntax:
+                self.banned_syntax.append(syntax)
+
+    # remove banned syntax
+    def remove_banned_syntax(self, syntax: str | Iterable[str]) -> None:
+        """
+        Allows a once banned SQL syntax to be executed on the database
+        """
+        if isinstance(syntax, list) or isinstance(syntax, tuple):
+            for x in syntax:
+                if x in self.banned_syntax:
+                    self.banned_syntax.remove(x)
+        elif isinstance(syntax, str):
+            if syntax in self.banned_syntax:
+                self.banned_syntax.remove(syntax)
     
     def backup(self, path: str = "", extension: str = "db") -> None:
         """
@@ -147,8 +206,13 @@ class Database:
                     raise Exception(f"Dropping is disabled on this database")
                 
                 if self.banned_statements != []:
-                    if parsed[0].get_type() in self.banned_statements:
-                        return None
+                    if parsed[0].get_type().upper() in self.banned_statements:
+                        raise Exception("Attempted to execute banned statement")
+                
+                if self.banned_syntax != []:
+                    for banned in self.banned_syntax:
+                        if banned in request:
+                            raise Exception("Attempted to execute banned syntax")
 
                 # Protection for delete statements
                 # won't commit a query that deletes a whole table
@@ -208,7 +272,7 @@ class Database:
         except Exception as e:
             if self.error:
                 if self.logging:
-                    print(f"FortifySQL DATABASE ERROR, database: {self.path}, error: {e}")
+                    print(f"SQL DATABASE ERROR, database: {self.path}, error: {e}")
             else:
                 raise Exception(e)
 
@@ -285,7 +349,6 @@ class Database:
         except Exception as e:
             if self.error:
                 if self.logging:
-                    print(f"FortifySQL DATABASE ERROR, database: {self.path}, error: {e}")
+                    print(f"SQL DATABASE ERROR, database: {self.path}, error: {e}")
             else:
                 raise Exception(e)
-

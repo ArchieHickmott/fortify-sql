@@ -26,7 +26,7 @@ try:
     database.query("INSERT INTO people (Id, Age, Name) VALUES (1, 23, 'John')")
     database.query("INSERT INTO people (Id, Age, Name) VALUES (2, 25, 'Jane')")
     if isinstance(database.query("SELECT * FROM people", save_data=True), list):
-        print(f"TEST {total_tests} passed ✅ can connect an execute queries")
+        print(f"TEST {total_tests}  passed ✅ can connect an execute queries")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -51,7 +51,7 @@ try:
     table_exists2 = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='toDrop'; ", save_data=True)
 
     if initial_table_exists != [] and table_exists1 != [] and table_exists2 == []:
-        print(f"TEST {total_tests} passed ✅ can configure if drop is enabled on database")
+        print(f"TEST {total_tests}  passed ✅ can configure if drop is enabled on database")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -73,7 +73,7 @@ try:
         bad_no_error = False
     
     if not bad_no_error:
-        print(f"TEST {total_tests} passed ✅ can configure if queries are error caught")
+        print(f"TEST {total_tests}  passed ✅ can configure if queries are error caught")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -93,7 +93,7 @@ try:
         pass
     table_exists = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='toDrop'; ", save_data=True)
     if initial_table_exists and table_exists != []:
-        print(f"TEST {total_tests} passed ✅ is basic injection proof")
+        print(f"TEST {total_tests}  passed ✅ is basic injection proof")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -119,7 +119,7 @@ try:
 
     table_exists = database.query("SELECT * FROM toDrop")
     if initial_table_exists and table_exists != []:
-        print(f"TEST {total_tests} passed ✅ can't delete a whole table when DROP is disabled")
+        print(f"TEST {total_tests}  passed ✅ can't delete a whole table when DROP is disabled")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -136,7 +136,7 @@ try:
         test_pass = True
     database.multi_query("SELECT * FROM people; SELECT * FROM people")
     if test_pass:
-        print(f"TEST {total_tests} passed ✅ can't run more than one statement with query() method")
+        print(f"TEST {total_tests}  passed ✅ can't run more than one statement with query() method")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -147,15 +147,16 @@ except Exception as e:
 total_tests += 1
 try:
     database.add_banned_statement("SELECT")
-    data = database.query("SELECT * FROM people")
-
-    test_pass = data == [] or data is None
+    try:
+        data = database.query("SELECT * FROM people")
+    except:
+        test_pass = True
 
     database.remove_banned_statement("SELECT")
     data = database.query("SELECT * FROM people")
     
     if test_pass:
-        print(f"TEST {total_tests} passed ✅ can set banned staements")
+        print(f"TEST {total_tests}  passed ✅ can set banned staements")
         passed_tests += 1
     else:
         raise Exception("") 
@@ -170,7 +171,7 @@ try:
 
     data[0]["id"]
     
-    print(f"TEST {total_tests} passed ✅ can set row factories")
+    print(f"TEST {total_tests}  passed ✅ can set row factories")
     passed_tests += 1
 except Exception as e:
     print(f"TEST {total_tests} failed ❌: {e}")
@@ -188,10 +189,49 @@ try:
     backupdb = sql.Database(path)
     backupdb.query("SELECT * FROM people")
     passed_tests += 1
-    print(f"TEST {total_tests} passed ✅ can create backups")
+    print(f"TEST {total_tests}  passed ✅ can create backups")
 except Exception as e:
     print(f"TEST {total_tests} failed ❌: {e}")
 
-database.allow_drop(True)
-database.query("DROP TABLE IF EXISTS toDrop")
+# backup
+total_tests += 1
+try:
+    CONFIG = \
+    """
+    {
+        "allow_dropping": false, 
+        "check_delete_statements": true,
+        "error_catching": false,
+        "error_logging": false,
+        "banned_statements": ["INSERT"],
+        "banned_syntax": [],
+
+        "default_query_logger": false,
+        "default_row_factory": true
+    }
+    """
+    database.import_configuration(json_string=CONFIG)
+
+    database.query("CREATE TABLE IF NOT EXISTS toDrop (id, value)")
+
+    try:
+        database.query("DROP TABLE toDrop")
+        test_passed = False
+    except:
+        test_passed = True
+    
+    try:
+        database.query("INSERT INTO toDrop (id, value) VALUES (1, 'test')")
+        test_passed = False
+    except:
+        pass
+
+    if test_passed:
+        passed_tests += 1
+        print(f"TEST {total_tests} passed ✅ can import configuration")
+    else:
+        raise Exception("")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
+    
 print(f"\nTESTING DONE \n{passed_tests}/{total_tests} passed {round((passed_tests/total_tests) * 100, 2)}%")
