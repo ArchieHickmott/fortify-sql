@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.3.2'
+VERSION = '0.4.0'
 DESCRIPTION = 'SQLite extension with a focus on security'
 long_description = ""
 with open("README.md", 'r') as readme:
@@ -20,7 +20,7 @@ setup(
     keywords=["sql", "security"],
     classifiers=[
         "Intended Audience :: Developers",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
     ],
     project_urls={  # Optional
         "Bug Reports": "https://github.com/ArchieHickmott/fortify-sql",
