@@ -11,7 +11,7 @@ setup(
     name="fortifysql",
     version=VERSION,
     author="Archie Hickmott",
-    author_email="<25hickmar@gmail.com>",
+    author_email="25hickmar@gmail.com",
     description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type='text/markdown',

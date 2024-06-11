@@ -8,3 +8,4 @@ pm_database.db
 test.py
 /.vscode
 test.py
+/fortifysql.egg-info
