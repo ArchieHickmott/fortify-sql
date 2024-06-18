@@ -10,7 +10,7 @@ import random
 import json
 from typing import Callable, Iterable
 
-from .purify import is_drop_query, is_dangerous_delete
+from .utils import is_drop_query, is_dangerous_delete
 
 class Database:
     """
@@ -27,7 +27,7 @@ class Database:
                     self.name = path.rsplit('/', 1)[1]
                 else:
                     self.name = path
-            else: 
+            else:
                 self.name = name
         elif path == ":memory:":
             self.name = "memory"
@@ -72,7 +72,7 @@ class Database:
             raise Exception("Can't have import configuration from file and string at the same time")
         else:
             raise Exception("No arguments given to import_configuration()")
-        
+
         self.error = config["error_catching"]
         self.allow_dropping = config["allow_dropping"]
         self.check_delete_statements = config["check_delete_statements"]
@@ -103,7 +103,7 @@ class Database:
         """
         self.error = enable
         self.logging = logging
-    
+
     def query_logging(self, enable: bool, func: Callable | None = None) -> None:
         """
         Enables query logging, prints form [database name] query
@@ -129,7 +129,7 @@ class Database:
         This can be computationally expensive for very large tables.
         """
         self.check_delete_statements = enable
-        
+
     # add a banned statement
     def add_banned_statement(self, statement: str | Iterable[str]) -> None:
         """
@@ -182,7 +182,7 @@ class Database:
         elif isinstance(syntax, str):
             if syntax in self.banned_syntax:
                 self.banned_syntax.remove(syntax)
-    
+
     def backup(self, path: str = "", extension: str = "db") -> None:
         """
         Creates a backup of the database as path/time.extension ("/time.db" by default) where time us the time of the backup
@@ -192,83 +192,79 @@ class Database:
             with open(path, "wb") as dst_file:
                 dst_file.write(src_file.read())
         return path
-        
+
+    def is_dangerous_request(self, request, parameters):
+        parsed = sqlparse.parse(request)[0]
+        if parsed.get_type() == "DELETE" and not self.allow_dropping:
+            token_list = sqlparse.sql.TokenList(parsed.tokens)
+            for token in token_list:
+                if token.value == "FROM":
+                    from_id = token_list.token_index(token)
+                    table = token_list.token_next(from_id)[1].value
+
+            cur = self.conn.cursor()
+            cur.execute(f"SELECT * FROM {table}")
+            if not cur.fetchall() == []:
+                cur.close()
+                self.conn.commit()
+                cur = self.conn.cursor()
+                key = random.randint(0, 100)
+                temp_table = f"check{key}"
+                cur.execute(f"CREATE TEMP TABLE {temp_table} AS SELECT * FROM {table} WHERE 0")
+                cur.execute(f"INSERT INTO {temp_table} SELECT * FROM {table}")
+                query = request.replace(table, temp_table)
+                cur.execute(query, parameters)
+                cur.execute(f"SELECT * FROM {temp_table}")
+                if not cur.fetchall == []:
+                    cur.execute(f"DROP TABLE {temp_table}")
+                    self.conn.commit()
+                    cur.close()
+                    return False
+                else:
+                    cur.execute(f"DROP TABLE {temp_table}")
+                    self.conn.commit()
+                    cur.close()
+            else:
+                self.conn.commit()
+                cur.close()
+                return True
+
     # Excecutes a single query on the database
-    def query(self, request: str, parameters: tuple=None, save_data=True) -> list | None:
+    def query(self, request: str, parameters: tuple=(), save_data=True) -> list | None:
         """
         Handles querying a database, includes paramaterisation for safe user inputing. \n
         SECURITY NOTE: this allows a single statement to be excecuted
         """
         try:
             parsed = sqlparse.parse(request)
-            if len(parsed) == 1:
-                if (not self.allow_dropping) and is_drop_query(request):
-                    raise Exception(f"Dropping is disabled on this database")
-                
-                if self.banned_statements != []:
-                    if parsed[0].get_type().upper() in self.banned_statements:
-                        raise Exception("Attempted to execute banned statement")
-                
-                if self.banned_syntax != []:
-                    for banned in self.banned_syntax:
-                        if banned in request:
-                            raise Exception("Attempted to execute banned syntax")
+            if not len(parsed) == 1:
+                raise Exception("Multiple statements not allowed in a single query")
 
-                # Protection for delete statements
-                # won't commit a query that deletes a whole table
-                if parsed[0].get_type() == "DELETE" and not self.allow_dropping:
-                    parsed = parsed[0]
-                    token_list = sqlparse.sql.TokenList(parsed.tokens)
-                    for token in token_list:
-                        if token.value == "FROM":
-                            from_id = token_list.token_index(token)
-                            table = token_list.token_next(from_id)[1].value
-                    
-                    cur = self.conn.cursor()
-                    cur.execute(f"SELECT * FROM {table}")
-                    if not cur.fetchall() == []:
-                        cur.close()
-                        self.conn.commit()
-                        cur = self.conn.cursor()
-                        key = random.randint(0, 100)
-                        temp_table = f"check{key}"
-                        cur.execute(f"CREATE TEMP TABLE {temp_table} AS SELECT * FROM {table} WHERE 0")
-                        cur.execute(f"INSERT INTO {temp_table} SELECT * FROM {table}")
-                        query = request.replace(table, temp_table)
-                        cur.execute(query, parameters)
-                        cur.execute(f"SELECT * FROM {temp_table}")
-                        if not cur.fetchall == []:
-                            cur.execute(f"DROP TABLE {temp_table}")
-                            self.conn.commit()
-                            cur.close()
-                            self.cur = self.conn.cursor()
-                            self.cur.execute(request, parameters)
-                            self.conn.commit()
-                            self.cur.close()
-                            self.cur = None
-                            return None
-                        else:
-                            cur.execute(f"DROP TABLE {temp_table}")
-                            self.conn.commit()
-                            cur.close()
-                    else:
-                        self.conn.commit()
-                        cur.close()
+            if (not self.allow_dropping) and is_drop_query(request):
+                raise Exception(f"Dropping is disabled on this database")
 
-                self.cur = self.conn.cursor()
-                if parameters:
-                    self.cur.execute(request, parameters)
-                else:
-                    self.cur.execute(request)
-                data = self.cur.fetchall()
-                self.conn.commit()
-                self.cur.close()
-                self.cur = None
-                if save_data:
-                    self.recent_data = data
-                    return data
-            else:
-                raise Exception("Multiple statements not allowed in query(), try using multi_query()")
+            if self.banned_statements != []:
+                if parsed[0].get_type().upper() in self.banned_statements:
+                    raise Exception("Attempted to execute banned statement")
+
+            if self.banned_syntax != []:
+                for banned in self.banned_syntax:
+                    if banned in request:
+                        raise Exception("Attempted to execute banned syntax")
+
+            if self.is_dangerous_request(request, parameters):
+                raise Exception(f"Attempted to execute dangerous statement: {request}")
+
+            self.cur = self.conn.cursor()
+            self.cur.execute(request, parameters)
+            data = self.cur.fetchall()
+            self.conn.commit()
+            self.cur.close()
+            self.cur = None
+            if save_data:
+                self.recent_data = data
+                return data
+
         except Exception as e:
             if self.error:
                 if self.logging:
@@ -277,75 +273,16 @@ class Database:
                 raise Exception(e)
 
     # Excecutes multiple queries on the database
-    def multi_query(self, request: str, parameters: tuple=None, save_data=True):
+    def multi_query(self, request: str, parameters: tuple=(), save_data=True):
         """
         Handles querying a database, includes paramaterisation for safe user inputing. will only return first statements data \n
         SECURITY NOTE: this allows multiple statements to be exceucuted at once, use query() if only one statement will be run
         """
         try:
-            data = None
             statements = sqlparse.split(request)
             for statement in statements:
-                parsed = sqlparse.parse(statement)[0]
-                if (not self.allow_dropping) and (is_drop_query(statement) or is_dangerous_delete(statement)):
-                    raise Exception(f"Dropping is disabled on this database")
-                
-                if self.banned_statements != []:
-                    if parsed.get_type() in self.banned_statements:
-                        return None
-
-                if parsed.get_type() == "DELETE" and not self.allow_dropping:
-                    token_list = sqlparse.sql.TokenList(parsed.tokens)
-                    for token in token_list:
-                        if token.value == "FROM":
-                            from_id = token_list.token_index(token)
-                            table = token_list.token_next(from_id)[1].value
-                    
-                    cur = self.conn.cursor()
-                    cur.execute(f"SELECT * FROM {table}")
-                    if not cur.fetchall() == []:
-                        cur.close()
-                        self.conn.commit()
-                        cur = self.conn.cursor()
-                        key = random.randint(0, 100)
-                        temp_table = f"check{key}"
-                        cur.execute(f"CREATE TEMP TABLE {temp_table} AS SELECT * FROM {table} WHERE 0")
-                        cur.execute(f"INSERT INTO {temp_table} SELECT * FROM {table}")
-                        query = request.replace(table, temp_table)
-                        cur.execute(query, parameters)
-                        cur.execute(f"SELECT * FROM {temp_table}")
-                        if not cur.fetchall == []:
-                            cur.execute(f"DROP TABLE {temp_table}")
-                            self.conn.commit()
-                            cur.close()
-                            self.cur = self.conn.cursor()
-                            self.cur.execute(request, parameters)
-                            self.conn.commit()
-                            self.cur.close()
-                            self.cur = None
-                            return None
-                        else:
-                            cur.execute(f"DROP TABLE {temp_table}")
-                            self.conn.commit()
-                            cur.close()
-                    else:
-                        self.conn.commit()
-                        cur.close()
-
-                self.cur = self.conn.cursor()
-                if parameters:
-                    self.cur.execute(statement, parameters)
-                else:
-                    self.cur.execute(statement)
-                temp_data = self.cur.fetchall()
-                self.conn.commit()
-                self.cur.close()
-                self.cur = None
-                if save_data and data is not None:
-                    self.recent_data = data
-                    data = temp_data
-            return data
-        
+                self.query(statement, parameters, save_data)
+            return self.recent_data
         except Exception as e:
             if self.error:
                 if self.logging:
