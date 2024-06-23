@@ -1,7 +1,17 @@
+"""
+Utils, mainly used by the database class
+"""
+
 import sqlparse
 from sqlparse.sql import Where
 from sqlparse.tokens import Keyword, DML
+import sqlite3
 
+import random
+
+"""
+Query purification
+"""
 def is_drop_query(query):
     """
     Check if the query contains any potentially DROP statement
@@ -65,3 +75,7 @@ def is_dangerous_delete(query):
             if is_always_true_where(where):
                 return True
     return False
+
+"""
+Query utils
+"""

@@ -193,8 +193,11 @@ class Database:
                 dst_file.write(src_file.read())
         return path
 
-    def is_dangerous_request(self, request, parameters):
+    def is_dangerous_request(self, request, parameters) -> bool:
         parsed = sqlparse.parse(request)[0]
+        if is_dangerous_delete(request):
+            return True
+
         if parsed.get_type() == "DELETE" and not self.allow_dropping:
             token_list = sqlparse.sql.TokenList(parsed.tokens)
             for token in token_list:
@@ -204,7 +207,7 @@ class Database:
 
             cur = self.conn.cursor()
             cur.execute(f"SELECT * FROM {table}")
-            if not cur.fetchall() == []:
+            if cur.fetchall() == []:
                 cur.close()
                 self.conn.commit()
                 cur = self.conn.cursor()
