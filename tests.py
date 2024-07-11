@@ -241,6 +241,20 @@ try:
 except Exception as e:
     print(f"TEST {total_tests} failed ❌: {e}")
 
+# ORM can read data
+total_tests += 1
+try:
+    database.select("people").commit()
+    database.select_distinct("people").commit()
+    test_passed = isinstance(database.select("people", 'age').where('age=23').commit(), list)
+    if test_passed:
+        passed_tests += 1
+        print(f"TEST {total_tests} passed ✅ can peform basic ORM functions")
+    else:
+        raise Exception("")
+except Exception as e:
+    print(f"TEST {total_tests} failed ❌: {e}")
+
 database = None
 testdb = None
 

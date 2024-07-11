@@ -11,8 +11,9 @@ import json
 from typing import Callable, Iterable
 
 from .utils import is_drop_query, is_dangerous_delete
+from .orm import Select
 
-class Database:
+class Database(Select):
     """
     This class handles the interaction between python and the self.
     """
@@ -292,3 +293,14 @@ class Database:
                     print(f"SQL DATABASE ERROR, database: {self.path}, error: {e}")
             else:
                 raise Exception(e)
+    
+    def commit(self):   
+        if self.join_template[0]: # if there is a table join
+            query = self.header + self.join_template[1] + " "
+        else:
+            query = self.header
+        query += self.where_clause + self.footer + ";"
+        print(query)
+        query = self.query(query, self.parameters if self.parameters is not None else ())
+        self.reset()
+        return query
