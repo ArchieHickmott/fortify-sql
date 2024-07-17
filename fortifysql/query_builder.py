@@ -217,24 +217,24 @@ class Select(StatementType):
             self.__str_query += " LIMIT " + self.__ordering_terms
         return str(self.__str_query)
 
-class DistinctSelect(Select):
+class DistinctSelect(Select):    
     def build(self):
         """builds the query based on the past method chain
 
         Returns:
             str: SQL query
         """
-        self.__str_query = "SELECT DISTINCT " + self.__result_columns + " FROM " + self.__result_tables
-        if self.__where_expr:
-            self.__str_query += " WHERE " + self.__where_expr
-        if self.__group_expr:
-            self.__str_query += " GROUP BY " + self.__group_expr
-        if self.__having_expr:
-            self.__str_query += " HAVING " + self.__having_expr
-        if self.__ordering_terms:
-            self.__str_query += " ORDER BY " + self.__ordering_terms
-        if self.__limit_expr:
-            self.__str_query += " LIMIT " + self.__ordering_terms
+        self.__str_query = "SELECT DISTINCT " + self._Select__result_columns + " FROM " + self._Select__result_tables
+        if self._Select__where_expr:
+            self.__str_query += " WHERE " + self._Select__where_expr
+        if self._Select__group_expr:
+            self.__str_query += " GROUP BY " + self._Select__group_expr
+        if self._Select__having_expr:
+            self.__str_query += " HAVING " + self._Select__having_expr
+        if self._Select__ordering_terms:
+            self.__str_query += " ORDER BY " + self._Select__ordering_terms
+        if self._Select__limit_expr:
+            self.__str_query += " LIMIT " + self._Select__ordering_terms
         return self.__str_query     
 
 class Insert(StatementType):
