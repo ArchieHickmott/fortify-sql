@@ -4,10 +4,7 @@ Utils, mainly used by the database class
 
 import sqlparse
 from sqlparse.sql import Where
-from sqlparse.tokens import Keyword, DML
-import sqlite3
-
-import random
+from sqlparse.tokens import Keyword
 
 """
 Query purification
