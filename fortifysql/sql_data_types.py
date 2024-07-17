@@ -144,6 +144,7 @@ class Blob(SQLDataType):
 
 ALL_SQL_DATA_TYPES = [Null, Integer, Real, Text, Blob]
 ALL_SQL_DATA_TYPE_NAMES = [dtype.sql_text for dtype in ALL_SQL_DATA_TYPES]
+primitives = (bool, str, int, float, type(None), complex) 
 
 def get_dtype(text: str):
     match text.upper().strip():

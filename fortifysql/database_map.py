@@ -4,15 +4,15 @@ Used to map a database in python
 from typing import List
 import sqlite3
 
-from .sql_data_types import get_dtype
-from .sql_data_types import LogicalString
+from fortifysql.sql_data_types import get_dtype, LogicalString, primitives
+import fortifysql
 
-import sqlparse
-        
-primitives = (bool, str, int, float, type(None), complex)        
+import sqlparse     
+
+class Column: ... # first defined here for typechecking
 
 class Table:
-    def __init__(self, db, name: str, sql, tbl_name=""):
+    def __init__(self, db: fortifysql.Database, name: str, sql, tbl_name=""):
         """Used by FortifySQL ORM to represent a table
 
         Args:
@@ -48,8 +48,73 @@ class Table:
         query = f"SELECT {args} FROM {self.name}"
         return self.db.query(query)
     
+    def select(self, *args):
+        """used to select data from a table, can be combined with methods such as .where() \n
+        e.g: select(table, table.c1, table.c2)
+
+        Args:
+            table (Table): table to select from
+            *args (Column | str): columns to select from
+
+        Returns:
+            Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
+        """
+        return self.db.select(self, args)
+    
+    def select_distinct(self, *args):
+        """used to select DISTINCT data from a table, can be combined with methods such as .where() \n
+        e.g: select(table, table.c1, table.c2)
+
+        Args:
+            table (Table): table to select from
+            *args (Column | str): columns to select from
+
+        Returns:
+            Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
+        """
+        return self.db.select(self, args)        
+    
+    def insert(self, *cols, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False):
+        """ used to insert data into the database, give table and columns to the table and columns insert into, use insert().values() for the values to insert
+
+        Args:
+            table (Table): table to insert into
+            cols (List[Column  |  str], optional): columns to insert into
+            abort (bool, optional): SQL OR ABORT clause. Defaults to False.
+            fail (bool, optional): SQL OR FAIL clause. Defaults to False.
+            ignore (bool, optional): SQL OR IGNORE clause. Defaults to False.
+            replace (bool, optional): SQL OR REPLACE clause. Defaults to False.
+            rollback (bool, optional): SQL OR ROLLBACK clause. Defaults to False.
+        """
+        return self.db.insert(self, cols, abort, fail, ignore, replace, rollback)
+    
+    def update(self, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False):
+        """ used to update data into the database, give table to update, use update().values(col==value,...) for the values to update
+
+        Args:
+            table (Table): table to update
+            abort (bool, optional): SQL OR ABORT clause. Defaults to False.
+            fail (bool, optional): SQL OR FAIL clause. Defaults to False.
+            ignore (bool, optional): SQL OR IGNORE clause. Defaults to False.
+            replace (bool, optional): SQL OR REPLACE clause. Defaults to False.
+            rollback (bool, optional): SQL OR ROLLBACK clause. Defaults to False.
+        """
+        return self.db.update(self, abort, fail, ignore, replace, rollback)
+
+    def delete(self, expr: str = False):
+        """deletes data from a table where the row fufils the expression
+
+        Args:
+            table (Table): table to delete from
+            expr (str, optional): WHERE expression to filter the data to be deleted. Defaults to False.
+
+        Raises:
+            SecurityError: if there is no WHERE clause and DROPPING is banned on database
+        """
+        return self.db.delete(self, expr)
+    
     # TODO: create docstring
-    def __import_columns(self):
+    def __import_columns(self) -> List[Column]:
         cursor = self.db.conn.execute(f'PRAGMA table_info({self.name})')
         data = cursor.fetchall()
         column_info = [[row[1], row[2]] for row in data]
