@@ -53,14 +53,7 @@ class Database(QueryBuilder):
         self.conn = sqlite3.connect(path, check_same_thread=check_same_thread)
         self.recent_data = None
         
-        self.tables = {}
-        raw_tables = self.query("SELECT name, sql, tbl_name FROM sqlite_master WHERE type='table'")
-        for table in raw_tables:
-            table_class = Table(self, table[0], table[1], table[2])
-            self.tables[table_class.name] = table_class
-        
-        for table, table_class in self.tables.items():
-            exec(f"self.{table} = table_class")
+        self.reload_tables()
 
     # to safely close database
     def __del__(self) -> None:
@@ -70,6 +63,16 @@ class Database(QueryBuilder):
         if self.conn is not None:
             self.conn.rollback()
             self.conn.close()
+    
+    def reload_tables(self):
+        self.tables = {}
+        raw_tables = self.query("SELECT name, sql, tbl_name FROM sqlite_master WHERE type='table'")
+        for table in raw_tables:
+            table_class = Table(self, table[0], table[1], table[2])
+            self.tables[table_class.name] = table_class
+        
+        for table, table_class in self.tables.items():
+            exec(f"self.{table} = table_class")
 
     def import_configuration(self, path: str = "", json_string: str = ""):
         """Imports a database configuration from a JSON file or a JSON string \n

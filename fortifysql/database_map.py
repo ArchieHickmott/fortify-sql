@@ -4,15 +4,15 @@ Used to map a database in python
 from typing import List
 import sqlite3
 
-from fortifysql.sql_data_types import get_dtype, LogicalString, primitives
-import fortifysql
+from .sql_data_types import get_dtype, LogicalString, primitives
+from .fortify_typing import TypeDatabase, TypeInsert, TypeDistinctSelect, TypeSelect, TypeUpdate, TypeDelete
 
 import sqlparse     
 
 class Column: ... # first defined here for typechecking
 
 class Table:
-    def __init__(self, db: fortifysql.Database, name: str, sql, tbl_name=""):
+    def __init__(self, db: TypeDatabase, name: str, sql, tbl_name=""):
         """Used by FortifySQL ORM to represent a table
 
         Args:
@@ -48,7 +48,7 @@ class Table:
         query = f"SELECT {args} FROM {self.name}"
         return self.db.query(query)
     
-    def select(self, *args):
+    def select(self, *args) -> TypeSelect:
         """used to select data from a table, can be combined with methods such as .where() \n
         e.g: select(table, table.c1, table.c2)
 
@@ -59,9 +59,9 @@ class Table:
         Returns:
             Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
         """
-        return self.db.select(self, args)
+        return self.db.select(self, *args)
     
-    def select_distinct(self, *args):
+    def select_distinct(self, *args) -> TypeDistinctSelect:
         """used to select DISTINCT data from a table, can be combined with methods such as .where() \n
         e.g: select(table, table.c1, table.c2)
 
@@ -74,7 +74,7 @@ class Table:
         """
         return self.db.select(self, args)        
     
-    def insert(self, *cols, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False):
+    def insert(self, *cols, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False) -> TypeInsert:
         """ used to insert data into the database, give table and columns to the table and columns insert into, use insert().values() for the values to insert
 
         Args:
@@ -88,7 +88,7 @@ class Table:
         """
         return self.db.insert(self, cols, abort, fail, ignore, replace, rollback)
     
-    def update(self, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False):
+    def update(self, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False) -> TypeUpdate:
         """ used to update data into the database, give table to update, use update().values(col==value,...) for the values to update
 
         Args:
@@ -101,7 +101,7 @@ class Table:
         """
         return self.db.update(self, abort, fail, ignore, replace, rollback)
 
-    def delete(self, expr: str = False):
+    def delete(self, expr: str = False) -> TypeDelete:
         """deletes data from a table where the row fufils the expression
 
         Args:
@@ -137,7 +137,13 @@ class Column:
         self.name = name
         self.dtype = dtype
         self.table = table
-        
+    
+    def __call__(self):
+        data = self.table.db.select(self.table, self).run()
+        data = [row[0] for row in data]
+        return data
+            
+    
     def __str__(self) -> LogicalString:
         """used for str(Column())
 
