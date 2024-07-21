@@ -42,7 +42,9 @@ class SQLDataType: # used for typing
     sql_text = ...
     value = ...
     
-    def __init__(self): ...
+    def __init__(self, value):
+        if isinstance(value, Literal):
+            self.value = value 
     
     def __str__(self): ...
 
@@ -75,6 +77,8 @@ class Integer(SQLDataType):
             number = number.real    
 
         self.value: int = int(number)
+        
+        super().__init__(number)
 
     def __str__(self) -> str:
         return str(self.value)
@@ -96,6 +100,7 @@ class Real(SQLDataType):
             number = number.real
         
         self.value = float(number)
+        super().__init__(number)
 
     def __str__(self):
         return str(self.value)
@@ -109,6 +114,7 @@ class Text(SQLDataType):
     def __init__(self, text) -> None:
         try:
             self.value = str(text)
+            super().__init__(text)     
         except ValueError as e:
             raise SQLTypeError(f"Error in converting {text} to TEXT: {e}")
     
@@ -126,15 +132,18 @@ class Blob(SQLDataType):
             raise SQLTypeError(f"Blob() cannot have two inputs: {bites} and {bytes_like}")
         elif bites is not None and isinstance(bites, bytes):
             self.value = bites
+            value = bites
         elif bytes_like is not None:
             try:
                 self.value = bytes(bytes_like)
+                value = bytes_like
             except Exception as e:
                 raise SQLTypeError(f"Error in converting to bytes {e}")
         else:
             raise SQLTypeError(f"Invalid inputs to Blob() {bites}, {bytes_like}")
         
         self.encoding = encoding
+        super().__init__(value)
 
     def __str__(self) -> str:
         if self.encoding != "":
@@ -142,7 +151,12 @@ class Blob(SQLDataType):
         else:
             return str(self.value)
 
-ALL_SQL_DATA_TYPES = [Null, Integer, Real, Text, Blob]
+class Literal(Text):
+    """special data type for parameterisation and subqueries"""
+    def __str__(self):
+        return self.value
+
+ALL_SQL_DATA_TYPES = [Null, Integer, Real, Text, Blob, Literal]
 ALL_SQL_DATA_TYPE_NAMES = [dtype.sql_text for dtype in ALL_SQL_DATA_TYPES]
 primitives = (bool, str, int, float, type(None), complex) 
 
@@ -171,6 +185,8 @@ def cast_sql_dtype(value: Any) -> SQLDataType:
         _type_: _description_
     """
     if isinstance(value, str):
+        if value == '?':
+            return Literal(value)
         return Text(value)
     if isinstance(value, int):
         return Integer(value)

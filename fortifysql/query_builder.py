@@ -16,7 +16,7 @@ class QueryBuilder:
         Returns:
             Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
         """
-        return Select(self).select(table, args)
+        return Select(self).select(table, *args)
     
     def select_distinct(self, table: Table, *args: Table | Column | str):
         """used to select DISTINCT data from a table, can be combined with methods such as .where() \n
@@ -29,7 +29,7 @@ class QueryBuilder:
         Returns:
             Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
         """
-        return DistinctSelect(self).select(table, args)        
+        return DistinctSelect(self).select(table, *args)        
     
     def insert(self, table: Table, *cols: List[Column | str], abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False):
         """ used to insert data into the database, give table and columns to the table and columns insert into, use insert().values() for the values to insert
@@ -43,7 +43,7 @@ class QueryBuilder:
             replace (bool, optional): SQL OR REPLACE clause. Defaults to False.
             rollback (bool, optional): SQL OR ROLLBACK clause. Defaults to False.
         """
-        return Insert(self).insert(table, cols, abort, fail, ignore, replace, rollback)
+        return Insert(self).insert(table, *cols, abort=abort, fail=fail, ignore=ignore, replace=replace, rollback=rollback)
     
     def update(self, table: Table, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False):
         """ used to update data into the database, give table to update, use update().values(col==value,...) for the values to update
@@ -56,7 +56,7 @@ class QueryBuilder:
             replace (bool, optional): SQL OR REPLACE clause. Defaults to False.
             rollback (bool, optional): SQL OR ROLLBACK clause. Defaults to False.
         """
-        return Update(self).update(table, abort, fail, ignore, replace, rollback)
+        return Update(self).update(table, abort=abort, fail=fail, ignore=ignore, replace=replace, rollback=rollback)
 
     def delete(self, table: Table, expr: str = False):
         """deletes data from a table
@@ -78,6 +78,9 @@ class StatementType:
             db (Database): FortiftSQL Database Class
         """
         self.db = db
+        
+    def __str__(self):
+        return f'({self.build()})'
 
     def parameters(self, *args):
         return self.db.query(self.build(), args)
@@ -95,7 +98,7 @@ class Select(StatementType):
     __ordering_terms: LogicalString = LogicalString("")
     __limit_expr: int | LogicalString = None
         
-    def select(self, table: Table, args: List[Table | Column | str]):
+    def select(self, table: Table, *args: List[Table | Column | str]):
         """used to select data from a table, can be combined with methods such as .where() \n
         e.g: select(table, table.c1, table.c2)
 
@@ -244,7 +247,7 @@ class Insert(StatementType):
     
     def insert(self, 
                table: Table, 
-               cols: List[Column | str] = False,
+               *cols: List[Column | str],
                abort: bool=False,
                fail: bool=False,
                ignore: bool=False,
@@ -286,7 +289,15 @@ class Insert(StatementType):
         """values to insert use like: \n
         .values(value,...)
         """
-        self.__values = ', '.join(cast_sql_dtype(arg).__str__() for arg in args)
+        self.__values = ""
+        for arg in args:
+            print(arg)
+            print(type(arg))
+            if isinstance(arg, QUERY_TYPES):
+                self.__values += str(arg) + ', '
+            else:
+                self.__values += str(cast_sql_dtype(arg)) + ', '
+        self.__values = self.__values.strip(', ')
         return self
     
     def conflict(self, conflict):
@@ -402,7 +413,6 @@ class Delete(StatementType):
         Raises:
             SecurityError: if there is no WHERE clause and DROPPING is banned on database
         """
-        print(expr)
         if expr:
             self.__query = f"DELETE FROM {table} WHERE {expr}"
             return self
@@ -418,3 +428,5 @@ class Delete(StatementType):
             str: SQL query
         """
         return self.__query
+    
+QUERY_TYPES = (Select, DistinctSelect, Insert, Update, Delete, QueryBuilder, StatementType)

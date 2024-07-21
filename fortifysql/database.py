@@ -328,12 +328,12 @@ class Database(QueryBuilder):
 
             if self.banned_statements != []:
                 if parsed[0].get_type().upper() in self.banned_statements:
-                    raise SecurityError("Attempted to execute banned statement")
+                    raise SecurityError(f"Attempted to execute banned statement: {request}")
 
             if self.banned_syntax != []:
                 for banned in self.banned_syntax:
                     if banned in request:
-                        raise SecurityError("Attempted to execute banned syntax")
+                        raise SecurityError(f"Attempted to execute banned syntax: {request}")
 
             if self.is_dangerous_delete(request, parameters):
                 raise SecurityError(f"Attempted to execute dangerous statement: {request}")

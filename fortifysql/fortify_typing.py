@@ -25,7 +25,7 @@ class TypeTable:
             Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
         """
     
-    def select_distinct(self, *args):
+    def select_distinct(self, *args) -> Self:
         """used to select DISTINCT data from a table, can be combined with methods such as .where() \n
         e.g: select(table, table.c1, table.c2)
 

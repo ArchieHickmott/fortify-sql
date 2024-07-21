@@ -72,7 +72,7 @@ class Table:
         Returns:
             Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
         """
-        return self.db.select(self, args)        
+        return self.db.select(self, *args)        
     
     def insert(self, *cols, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False) -> TypeInsert:
         """ used to insert data into the database, give table and columns to the table and columns insert into, use insert().values() for the values to insert
@@ -86,7 +86,9 @@ class Table:
             replace (bool, optional): SQL OR REPLACE clause. Defaults to False.
             rollback (bool, optional): SQL OR ROLLBACK clause. Defaults to False.
         """
-        return self.db.insert(self, cols, abort, fail, ignore, replace, rollback)
+        if cols == ():
+            cols = self.columns
+        return self.db.insert(self, *cols, abort=abort, fail=fail, ignore=ignore, replace=replace, rollback=rollback)
     
     def update(self, abort: bool=False, fail: bool=False, ignore: bool=False, replace: bool=False, rollback: bool=False) -> TypeUpdate:
         """ used to update data into the database, give table to update, use update().values(col==value,...) for the values to update
@@ -99,7 +101,7 @@ class Table:
             replace (bool, optional): SQL OR REPLACE clause. Defaults to False.
             rollback (bool, optional): SQL OR ROLLBACK clause. Defaults to False.
         """
-        return self.db.update(self, abort, fail, ignore, replace, rollback)
+        return self.db.update(self, abort=abort, fail=fail, ignore=ignore, replace=replace, rollback=rollback)
 
     def delete(self, expr: str = False) -> TypeDelete:
         """deletes data from a table where the row fufils the expression
@@ -111,6 +113,7 @@ class Table:
         Raises:
             SecurityError: if there is no WHERE clause and DROPPING is banned on database
         """
+        print(expr)
         return self.db.delete(self, expr)
     
     # TODO: create docstring
