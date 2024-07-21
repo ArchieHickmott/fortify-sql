@@ -140,6 +140,12 @@ def test_backups():
 
     backupdb = Database(path)
     backupdb.query("SELECT * FROM people")
+    
+    testdb.__del__()
+    backupdb.__del__()
+    os.remove('test.db')
+    os.remove(path)
+    
 
 def test_json_config():
     database = Database(":memory:")
