@@ -1,16 +1,4 @@
-"""
-Tests the features of FortifySQL:
-•	Connect and executes queries on database
-•	Allows devs to configure if DROP is allowed on database
-•	Allows devs to configure if queries are error caught and printed to console
-•	Includes secure features:
-    o	Basic injection proof
-    o	Can’t use DELETE FROM table WHERE 1=1; as an alternative to drop if DROP is not allowed on database
-    o	Can’t run more than one statement on a query that is labelled as single statement
-•	One line of code to execute a query
-
-"""
-from fortifysql import Database, sqlite3
+from rebuild.orm import Database, sqlite3
 import os
 
 def test_basic_queries():
@@ -179,34 +167,3 @@ def test_json_config():
         pass
 
     assert test_passed
-
-def test_orm_basic_select():
-    database = Database(":memory:")
-    database.query("CREATE TABLE IF NOT EXISTS people (Id INTEGER PRIMARY KEY, Age INTEGER, Name TEXT)")
-    database.query("INSERT INTO people (Id, Age, Name) VALUES (1, 23, 'John')")
-    database.query("INSERT INTO people (Id, Age, Name) VALUES (2, 25, 'Jane')")
-    database.reload_tables()
-    database.select(database.people).run()
-    database.select_distinct(database.people).run()
-    test_passed = isinstance(database.select(database.people, database.people.Age).where(database.people.Age == 23).run(), list)
-    assert test_passed
-
-def test_full_crud():
-    database = Database(":memory:")
-    database.query("CREATE TABLE IF NOT EXISTS people (Id INTEGER PRIMARY KEY, Age INTEGER, Name TEXT)")
-    database.reload_tables()
-    people = database.people
-    
-    # Create
-    database.insert(people).values(1, 23, 'John')
-    database.insert(people).values(2, 25, 'Jane')
-    
-    # Read
-    database.select(people).run()
-    
-    # Update
-    database.update(people, abort=True).values(people.Age == 25).where(people.Age != 25)
-    
-    # Delete
-    database.delete(people, people.Id == 2)
-

@@ -25,7 +25,16 @@ class LogicalString(str):
         return LogicalString(f" {self} not {other} ")
     
     def __add__(self, other):
-        return LogicalString(str(self) + other)
+        return LogicalString(f"{self} + {other}")
+    
+    def __sub__(self, other):
+        return LogicalString(f"{self} - {other}")
+    
+    def __mul__(self, other):
+        return LogicalString(f"{self} * {other}")
+    
+    def __truediv__(self, other):
+        return LogicalString(f"{self} / {other}")
     
     def __iadd__(self, other):
         return LogicalString(str(self) + other)
