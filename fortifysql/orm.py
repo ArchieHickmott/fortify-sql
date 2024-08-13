@@ -4,7 +4,7 @@ import os
 import time
 import random
 import json
-from typing import Callable, Iterable, List, Any, Self
+from typing import Callable, Iterable, List, Any, Self, Tuple
 
 import sqlparse
 from prettytable import PrettyTable
@@ -302,7 +302,7 @@ class Database:
             return False
 
     # Excecutes a single query on the database
-    def query(self, request: str, parameters: tuple=(), save_data=True) -> List[List[Any]] | None:
+    def query(self, request: str, parameters: tuple=(), save_data=True) -> List[Tuple[Any]] | None:
         """Handles querying a database, includes paramaterisation for safe user inputing. \n
         SECURITY NOTE: this allows a single statement to be excecuted no more
 
@@ -319,7 +319,7 @@ class Database:
             SecurityError: if a dangerous DELETE was provided
 
         Returns:
-            List[List[Any]] | None: None if no data was returned by SQL, returns a table if not
+            List[Tuple[Any]] | None: None if no data was returned by SQL, returns a table if not
         """
         try:
             with self.conn: \
@@ -362,7 +362,7 @@ class Database:
                 raise e
 
     # Excecutes multiple queries on the database
-    def multi_query(self, request: str, parameters: tuple=(), save_data=True) -> List[List[Any]]:
+    def multi_query(self, request: str, parameters: tuple=(), save_data=True) -> List[Tuple[Any]]:
         """Handles querying a database, includes paramaterisation for safe user inputing. \n
         SECURITY NOTE: this allows a multiple statements to be executed, only use if necessery
 
@@ -378,7 +378,7 @@ class Database:
             SecurityError: if a dangerous DELETE was provided
 
         Returns:
-            List[List[Any]] | None: None if no data was returned by SQL, returns a table if not
+            List[Tuple[Any]] | None: None if no data was returned by SQL, returns a table if not
         """
         try:
             statements = sqlparse.split(request)
@@ -720,14 +720,14 @@ class Selectable(BaseStatement):
         else:
             return None
     
-    def all(self, *parameters) -> List[List[Any]]:
+    def all(self, *parameters) -> List[Tuple[Any]]:
         """returns all data from a query
 
         Args:
             *paramaters (optional): parameters to pass through query
 
         Returns:
-            List[List[Any]]: data from query
+            List[Tuple[Any]]: data from query
         """
         return self.table.db.query(self.statement, parameters)
     
