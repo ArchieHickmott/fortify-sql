@@ -4,6 +4,8 @@ these objects can be used to make queries without directly writing any SQL e.g:
     db = Database('mydb.db')
     table1 = db.table1
     print(table1()) # all data from table1
-    print(table1.select(table1.col1, table1.col2).where(table1.col1 == table1.col2)) # SELECT col1, col2 FROM table1 WHERE col1 = col2
-    db.delete(table1, col1 >= 1)
-All CRUD operations are supported
+    print(table1.get(table1.col1, table1.col2).filter(col1=2)) # SELECT col1, col2 FROM table1 WHERE col1 = 2
+    table1.delete(table1.col1 >= 1)
+All baisc CRUD operations are supported
+a Table can be set to read only so only the .get and .get_distinct can be ran
+Pretty print method added to table, it does what it says it does. Prints the table, prettily

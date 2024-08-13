@@ -158,7 +158,7 @@ class Blob(SQLDataType):
         if self.encoding != "":
             return "'" + str(self.value.decode(self.encoding)) + "'"
         else:
-            return str(self.value)
+            return str(self.value)[1:]
 
 class Literal(Text):
     """special data type for parameterisation and subqueries"""
@@ -170,6 +170,8 @@ ALL_SQL_DATA_TYPE_NAMES = [dtype.sql_text for dtype in ALL_SQL_DATA_TYPES]
 primitives = (bool, str, int, float, type(None), complex) 
 
 def get_dtype(text: str):
+    if "(" in text:
+        text = text.rsplit('(')[0]
     match text.upper().strip():
         case "NULL":
             return Null

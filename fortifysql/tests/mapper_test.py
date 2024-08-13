@@ -1,5 +1,5 @@
-from rebuild.orm import Table, Column, Database
-from rebuild.sql_data_types import Integer, Text, Real, Blob
+from fortifysql.orm import Table, Column, Database
+from fortifysql.sql_data_types import Integer, Text, Real, Blob
 
 def test_import_table():
     db = Database(":memory:")

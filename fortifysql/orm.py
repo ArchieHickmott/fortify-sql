@@ -4,7 +4,7 @@ import os
 import time
 import random
 import json
-from typing import Callable, Iterable, List, Any
+from typing import Callable, Iterable, List, Any, Self
 
 import sqlparse
 from prettytable import PrettyTable
@@ -322,6 +322,7 @@ class Database:
             List[List[Any]] | None: None if no data was returned by SQL, returns a table if not
         """
         try:
+            with self.conn: \
             request = str(request)
             parsed = sqlparse.parse(request)
             if not len(parsed) == 1:
@@ -358,7 +359,7 @@ class Database:
                     print(f"SQL DATABASE ERROR, database: {self.path}, error: {e}")
                     quit()
             else:
-                raise Exception(e)
+                raise e
 
     # Excecutes multiple queries on the database
     def multi_query(self, request: str, parameters: tuple=(), save_data=True) -> List[List[Any]]:
@@ -389,7 +390,7 @@ class Database:
                 if self.logging:
                     print(f"SQL DATABASE ERROR, database: {self.path}, error: {e}")
             else:
-                raise Exception(e)
+                raise e
             
 class Column: # first defined here for typechecking
     name = ...
@@ -408,10 +409,12 @@ class Table:
             sql (str): sql statement that creates the table
             tbl_name (str, optional): SQLite tbl_name variable Defaults to "".
         """
-        self.reserved_names = ["sql", "tbl_name", "columns", "db"]
+        self.reserved_names = ["sql", "tbl_name", "columns", "db", "read_only"]
         self.__name = name
         self.sql = sql
         self.tbl_name = tbl_name
+        
+        self.read_only = False
         
         if db:
             self.db = db
@@ -454,7 +457,15 @@ class Table:
         columns = []
         for column in column_info:
             columns.append(Column(column[0], column[1], self))  
-        return columns          
+        return columns    
+    
+    def __edits_table(func):
+        def wrapper(self: Self, *args, **kw):
+            if self.read_only:
+                raise SecurityError(f"tried to edit a table that is marked as read only, table: {self}, {func}")
+            else: 
+                return func(self, *args, **kw)
+        return wrapper
 
     def get(self, *cols):
         """gets data from the table, NOTE: use .first(), .all() etc. to return the data
@@ -481,24 +492,30 @@ class Table:
         """
         return Select(self).select().filter(expr, **kw)
     
+    @__edits_table
     def append(self, **kw) -> None:
         """appends data to the end of a table
         """
         if kw == {}: return 
         cols = []
         values = []
+        paramaters = ()
         for col, val in kw.items():
             column = getattr(self, col)
             cols.append(str(col))
             if isinstance(val, Select):
                 values.append('(' + str(val) + ')')
+            elif isinstance(val, str) or isinstance(val, LogicalString):
+                paramaters = (*paramaters, val)
+                values.append('?')
             else:  
                 values.append(column.dtype(val))  
         cols = '(' + ', '.join(cols) + ')'
         values = '(' + ', '.join(str(value) for value in values) + ')'
         sql = f"INSERT INTO {self.__name} {cols} VALUES {values}"
-        self.db.query(sql)
+        self.db.query(sql, paramaters)
     
+    @__edits_table
     def replace(self, expr: str = "", **kw) -> None:   
         """used to replace data in a table
 
@@ -506,10 +523,20 @@ class Table:
             expr (str, optional): _description_. Defaults to "".
         """
         if kw == {}: return
-        vals = ', '.join(f"{col} = {val}" for col, val in kw.items())
-        where = "" if expr != "" else f"WHERE {expr}"
-        self.db.query(f"UPDATE {self.__name} SET {vals} {where}")
+        vals = ""
+        paramaters=()
+        for col, val in kw.items():
+            if isinstance(val, str) or isinstance(val, LogicalString):
+                vals += f"{col} = ?, "
+                paramaters = (*paramaters, val)
+                continue
+            vals += f"{col} = {val}, "
+        vals = vals[:-2]
+        where = "" if expr == "" else f"WHERE {expr}"
+        sql = f"UPDATE {self.__name} SET {vals} {where}"
+        self.db.query(sql, paramaters)
     
+    @__edits_table
     def remove(self, expr: str = "", **kw):
         if (not self.db.allow_dropping) and expr=="" and kw=={}:
             raise SecurityError(".remove() was given no arguments and will delete the whole table")
@@ -522,7 +549,8 @@ class Table:
         self.db.query(f"DELETE FROM {self.__name} {expr}")
         
     def pretty_print(self, limit: str | int = None):
-        return Select(self).select().pretty_print(limit=limit)
+        to_print = Select(self).select().pretty_print(limit=limit)
+        return to_print
          
 class Column:
     used_in_join = False
@@ -686,7 +714,11 @@ class Selectable(BaseStatement):
         Returns:
             List[Any]: first row of data
         """
-        return self.table.db.query(self.statement, parameters)[0]
+        data = self.table.db.query(self.statement, parameters)
+        if len(data) >= 1:
+            return data[0]
+        else:
+            return None
     
     def all(self, *parameters) -> List[List[Any]]:
         """returns all data from a query
@@ -740,6 +772,7 @@ class Selectable(BaseStatement):
         cur.close()
         prettytable = PrettyTable(col_names)
         prettytable.add_rows(data)
+        print(prettytable)
         return data     
 
 class Select(Selectable):
@@ -780,7 +813,7 @@ class Select(Selectable):
             Database: returns the Database class NOT the data, use .run() or .paramaters to get the data
         """
         if kw == {}:
-            if expr != "": raise FortifySQLError("""expected non "" expression given to .filter()""")
+            if expr == "": raise FortifySQLError("""expected non "" expression given to .filter()""")
             if isinstance(expr, Select):
                 expr = f"({repr(expr)})"
             self.statement += f"WHERE {expr} "

@@ -9,8 +9,8 @@ from .sql_functions import *
 from .sql_functions import __all__
 import sqlparse
 
-print(f"""\033[93mWARNING FortifySQL is in BETA {__version__}, 
-do not use in a production environment until full release \033[0m""")
+# print(f"""\033[93mWARNING FortifySQL is in BETA {__version__}, 
+# do not use in a production environment until full release \033[0m""")
 
 __all__ = ['Database', "Table", "column", 
            "sqlite3", "sqlparse",

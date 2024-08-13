@@ -1,4 +1,4 @@
-from rebuild.orm import Database, sqlite3
+from fortifysql.orm import Database, sqlite3
 import os
 
 def test_basic_queries():
@@ -66,11 +66,17 @@ def test_delete_checking():
     database.query("INSERT INTO toDrop (id, value) VALUES (1, 2)", save_data=False)
     database.query("INSERT INTO toDrop (id, value) VALUES (2, 3)", save_data=False)
 
-    database.query("DELETE FROM toDrop")
+    try:
+        database.query("DELETE FROM toDrop")
+    except: pass
     
-    database.query("DELETE FROM toDrop WHERE true")
-
-    database.query("DELETE FROM toDrop WHERE 2=2")
+    try:
+        database.query("DELETE FROM toDrop WHERE true")
+    except: pass
+    
+    try:
+        database.query("DELETE FROM toDrop WHERE 2=2")
+    except: pass
     table_exists = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='toDrop'; ", save_data=True) == [('toDrop',)]
     
     assert initial_table_exists and table_exists

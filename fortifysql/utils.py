@@ -72,7 +72,3 @@ def is_dangerous_delete(query):
             if is_always_true_where(where):
                 return True
     return False
-
-"""
-Query utils
-"""
