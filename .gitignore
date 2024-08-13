@@ -11,3 +11,4 @@ test.py
 test.py
 /fortifysql.egg-info
 test_database.db
+/fortifysql/tests/__pycache__
