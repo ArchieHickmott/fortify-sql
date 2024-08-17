@@ -1,7 +1,14 @@
+"""
+Utils, mainly used by the database class
+"""
+
 import sqlparse
 from sqlparse.sql import Where
-from sqlparse.tokens import Keyword, DML
+from sqlparse.tokens import Keyword
 
+"""
+Query purification
+"""
 def is_drop_query(query):
     """
     Check if the query contains any potentially DROP statement

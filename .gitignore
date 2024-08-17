@@ -1,3 +1,4 @@
+/.venv
 /venv
 sqlite.sql
 test.py
@@ -9,3 +10,5 @@ test.py
 /.vscode
 test.py
 /fortifysql.egg-info
+test_database.db
+/fortifysql/tests/__pycache__
