@@ -37,7 +37,7 @@ Parameters are defined with a '?' in the request and are passed through in a tup
 data = database.query("SELECT * FROM myTable WHERE id=?" (user_id,))
 ```
 ## Quickstart ORM
-the ORM is fairly basic, no joins or DDL but. It's a DML with basic CRUD abilities.
+the ORM is fairly basic, no joins or DDL. It's a DML with basic CRUD abilities.
 To get data from a table
 ```python
 data = database.mytable()
